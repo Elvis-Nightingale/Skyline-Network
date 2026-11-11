@@ -130,6 +130,11 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
+local Versiontag = Window:CreateTag({
+    text = "V1.0",
+    color = Color3.fromRGB(15, 175, 255),
+})
+
 local PlayerTab = Window:CreateTab({ name = "Player", icon = 95489465399880 })
 local VisualsTab = Window:CreateTab({ name = "Visuals", icon = 100033680381365 })
 local OthersTab = Window:CreateTab({ name = "Others", icon = 91687150884779 })
@@ -1426,7 +1431,7 @@ OthersTab:CreateSlider({
     name      = "Brightness slider",
     range     = { 0, 100 },
     increment = 1,
-    value     = 2,
+    value     = 50,
     callback  = function(val)
         Lighting.Brightness = (val / 100) * 3
     end,
@@ -1435,7 +1440,7 @@ OthersTab:CreateSlider({
 OthersTab:CreateButton({
     name     = "Reset brightness",
     callback = function()
-        Lighting.Brightness = 2
+        Lighting.Brightness = 50
     end,
 })
 
