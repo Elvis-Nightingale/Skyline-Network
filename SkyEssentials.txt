@@ -1,0 +1,2402 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/StyearX/Ui-Library/refs/heads/main/RayField-Plus%2B%2B/Rayfield.luau"))()
+
+Rayfield:AddTheme({
+    Name = "Sky Waves",
+
+    CornerRoundness     = UDim.new(0, 22),
+    ElementCornerRadius = UDim.new(0, 14),
+    PillCornerRadius    = UDim.new(1, 0),
+
+    WindowColor = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,      Color3.fromRGB(18, 32, 52)),
+        ColorSequenceKeypoint.new(0.35,   Color3.fromRGB(22, 36, 56)),
+        ColorSequenceKeypoint.new(0.7,    Color3.fromRGB(20, 30, 48)),
+        ColorSequenceKeypoint.new(0.9999, Color3.fromRGB(16, 26, 42)),
+        ColorSequenceKeypoint.new(1,      Color3.fromRGB(22, 38, 58)),
+    }),
+    ShadowColor = Color3.fromRGB(8, 14, 24),
+
+    ElementStroke = Color3.fromRGB(50, 80, 120),
+    ElementGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,      Color3.fromRGB(28, 44, 68)),
+        ColorSequenceKeypoint.new(0.5,    Color3.fromRGB(24, 38, 60)),
+        ColorSequenceKeypoint.new(0.9999, Color3.fromRGB(20, 34, 54)),
+        ColorSequenceKeypoint.new(1,      Color3.fromRGB(20, 34, 54)),
+    }),
+    ElementStrokeGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,      Color3.fromRGB(60, 140, 220)),
+        ColorSequenceKeypoint.new(0.5,    Color3.fromRGB(80, 170, 255)),
+        ColorSequenceKeypoint.new(0.9999, Color3.fromRGB(60, 140, 220)),
+        ColorSequenceKeypoint.new(1,      Color3.fromRGB(60, 140, 220)),
+    }),
+    ElementStrokeHover = Color3.fromRGB(100, 190, 255),
+    ElementTransparency = 0,
+    ElementStrokeTransparency = 0,
+    ElementStrokeHoverTransparency = 0,
+    ElementTextHoverColor = Color3.fromRGB(160, 210, 255),
+
+    TabColor = Color3.fromRGB(200, 230, 255),
+    TabBackground = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,      Color3.fromRGB(40, 90, 150)),
+        ColorSequenceKeypoint.new(0.5,    Color3.fromRGB(30, 70, 120)),
+        ColorSequenceKeypoint.new(1,      Color3.fromRGB(24, 50, 90)),
+    }),
+    TabStroke = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,      Color3.fromRGB(80, 180, 255)),
+        ColorSequenceKeypoint.new(0.5,    Color3.fromRGB(60, 150, 230)),
+        ColorSequenceKeypoint.new(1,      Color3.fromRGB(40, 100, 170)),
+    }),
+
+    SliderBackground = Color3.fromRGB(28, 48, 72),
+    SliderBackgroundHover = Color3.fromRGB(36, 60, 90),
+    SliderProgress = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,      Color3.fromRGB(100, 190, 255)),
+        ColorSequenceKeypoint.new(0.5,    Color3.fromRGB(50, 150, 240)),
+        ColorSequenceKeypoint.new(1,      Color3.fromRGB(30, 120, 210)),
+    }),
+    SliderStroke = Color3.fromRGB(200, 230, 255),
+    SliderHandle = Color3.fromRGB(255, 255, 255),
+
+    ToggleTrack = Color3.fromRGB(40, 100, 170),
+    ToggleTrackTransparency = 0.75,
+    ToggleKnobOff = Color3.fromRGB(200, 220, 240),
+    ToggleKnobOffTransparency = 0.5,
+    DarkToggleOverlay = false,
+
+    FieldBackground = Color3.fromRGB(28, 44, 68),
+    FieldTransparency = 0.3,
+    FieldGlow = Color3.fromRGB(60, 160, 255),
+    PlaceholderColor = Color3.fromRGB(120, 150, 180),
+    SurfaceStroke = Color3.fromRGB(50, 90, 140),
+
+    NeutralButton = Color3.fromRGB(28, 48, 72),
+    NeutralButtonHover = Color3.fromRGB(36, 60, 90),
+    NeutralButtonStroke = Color3.fromRGB(60, 140, 220),
+
+    ContentColor = Color3.fromRGB(210, 230, 250),
+    TitlingColor = Color3.fromRGB(230, 245, 255),
+    ActionColor = Color3.fromRGB(100, 190, 255),
+
+    AccentColor = Color3.fromRGB(60, 160, 255),
+    AccentStroke = Color3.fromRGB(120, 200, 255),
+    AccentGlow = 0.35,
+
+    StatBackground = Color3.fromRGB(16, 28, 44),
+    DropdownHighlight = Color3.fromRGB(60, 160, 255),
+
+    ErrorColor = Color3.fromRGB(210, 65, 65),
+    ErrorStrokeColor = Color3.fromRGB(240, 100, 100),
+
+    Font = Font.new("rbxasset://fonts/families/Gotham.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+    TitleFont = Font.new("rbxasset://fonts/families/Gotham.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
+
+    LiveAnimation = true,
+})
+
+local Window = Rayfield:CreateWindow({
+    title         = "Sky Essentials",
+    subtitle      = "By Skyler Heyes",
+    sidebarLayout = true,
+    Size  = UDim2.fromOffset(500, 375),
+    Font  = Enum.Font.Gotham,
+    Theme = "Sky Waves",
+
+    OpenButton = {
+        Title    = "Sky Essentials",
+        Subtitle = "Tap to open",
+        Icons    = "rbxassetid://120122773078069",
+    },
+
+    configuration = {
+        autoSave  = true,
+        setFolder = "Sky Essentials/Config",
+    },
+
+    appearance = {
+        setFolder = "Sky Essentials",
+    },
+})
+
+local PlayerTab = Window:CreateTab({ name = "Player", icon = 95489465399880 })
+local VisualsTab = Window:CreateTab({ name = "Visuals", icon = 100033680381365 })
+local OthersTab = Window:CreateTab({ name = "Others", icon = 91687150884779 })
+local ScriptsTab = Window:CreateTab({ name = "Scripts", icon = 97321022666868 })
+
+local wsEnabled = false
+local jpEnabled = false
+local gravEnabled = false
+local hipEnabled = false
+local freezeEnabled = false
+local isSpectating = false
+local spectatingPlayer = nil
+local teleportTarget = nil
+
+local currentWalkSpeed = 16
+local currentJumpPower = 50
+local currentGravity = 196.2
+local currentHipHeight = 1.75
+
+local function applyCharacterAttributes(char)
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hum then return end
+
+    if wsEnabled then
+        hum.WalkSpeed = currentWalkSpeed
+    else
+        hum.WalkSpeed = 16
+    end
+
+    hum.UseJumpPower = true
+    if jpEnabled then
+        hum.JumpPower = currentJumpPower
+    else
+        hum.JumpPower = 50
+    end
+
+    if hipEnabled then
+        hum.HipHeight = currentHipHeight
+    else
+        hum.HipHeight = 1.75
+    end
+
+    if hrp then
+        hrp.Anchored = freezeEnabled
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    task.wait(0.15)
+    applyCharacterAttributes(char)
+
+    if isSpectating and spectatingPlayer and spectatingPlayer.Character then
+        local targetHum = spectatingPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if targetHum then
+            Camera.CameraSubject = targetHum
+        end
+    end
+end)
+
+if LocalPlayer.Character then
+    applyCharacterAttributes(LocalPlayer.Character)
+end
+
+PlayerTab:CreateSection({ name = "Player attributes" })
+
+PlayerTab:CreateToggle({
+    name     = "Activate walkspeed",
+    value    = false,
+    callback = function(state)
+        wsEnabled = state
+        applyCharacterAttributes(LocalPlayer.Character)
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name     = "Activate jump power",
+    value    = false,
+    callback = function(state)
+        jpEnabled = state
+        applyCharacterAttributes(LocalPlayer.Character)
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name     = "Activate gravity",
+    value    = false,
+    callback = function(state)
+        gravEnabled = state
+        Workspace.Gravity = gravEnabled and currentGravity or 196.2
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name     = "Activate hip height",
+    value    = false,
+    callback = function(state)
+        hipEnabled = state
+        applyCharacterAttributes(LocalPlayer.Character)
+    end,
+})
+
+local walkspeedSlider = PlayerTab:CreateSlider({
+    name      = "Walkspeed slider",
+    range     = { 16, 250 },
+    increment = 1,
+    value     = 16,
+    callback  = function(val)
+        currentWalkSpeed = val
+        if wsEnabled then
+            applyCharacterAttributes(LocalPlayer.Character)
+        end
+    end,
+})
+
+local jumpPowerSlider = PlayerTab:CreateSlider({
+    name      = "Jump power slider",
+    range     = { 50, 300 },
+    increment = 1,
+    value     = 50,
+    callback  = function(val)
+        currentJumpPower = val
+        if jpEnabled then
+            applyCharacterAttributes(LocalPlayer.Character)
+        end
+    end,
+})
+
+local gravitySlider = PlayerTab:CreateSlider({
+    name      = "Gravity slider",
+    range     = { 0, 500 },
+    increment = 0.1,
+    value     = 196.2,
+    callback  = function(val)
+        currentGravity = val
+        if gravEnabled then
+            Workspace.Gravity = val
+        end
+    end,
+})
+
+local hipHeightSlider = PlayerTab:CreateSlider({
+    name      = "Hip height slider",
+    range     = { 1.75, 50 },
+    increment = 0.01,
+    value     = 1.75,
+    callback  = function(val)
+        currentHipHeight = val
+        if hipEnabled then
+            applyCharacterAttributes(LocalPlayer.Character)
+        end
+    end,
+})
+
+local function setSliderValue(slider, val)
+    if not slider then return end
+    pcall(function()
+        if slider.Set then
+            slider:Set(val)
+        elseif slider.SetValue then
+            slider:SetValue(val)
+        elseif type(slider) == "table" and slider.Set then
+            slider.Set(val)
+        end
+    end)
+end
+
+PlayerTab:CreateButton({
+    name     = "Reset to default attributes",
+    callback = function()
+        wsEnabled = false
+        jpEnabled = false
+        gravEnabled = false
+        hipEnabled = false
+        freezeEnabled = false
+
+        currentWalkSpeed = 16
+        currentJumpPower = 50
+        currentGravity = 196.2
+        currentHipHeight = 1.75
+
+        setSliderValue(walkspeedSlider, 16)
+        setSliderValue(jumpPowerSlider, 50)
+        setSliderValue(gravitySlider, 196.2)
+        setSliderValue(hipHeightSlider, 1.75)
+
+        Workspace.Gravity = 196.2
+
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hum then
+                hum.WalkSpeed = 16
+                hum.UseJumpPower = true
+                hum.JumpPower = 50
+                hum.HipHeight = 1.75
+                hum.Sit = false
+                hum.PlatformStand = false
+                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+            if hrp then
+                hrp.Anchored = false
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+            end
+        end
+
+        Window:Notify({ title = "Attributes Reset", content = "Player stats and sliders returned to normal." })
+    end,
+})
+
+PlayerTab:CreateSection({ name = "Flight" })
+
+local IsOnMobile
+xpcall(function()
+    IsOnMobile = table.find({Enum.Platform.Android, Enum.Platform.IOS}, UserInputService:GetPlatform())
+end, function()
+    IsOnMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+end)
+
+local FLYING = false
+local QEfly = true
+local iyflyspeed = 1
+local vehicleflyspeed = 1
+local flyKeyDown, flyKeyUp
+local flyGyro, flyVel, flyConn
+local flySpeed = 1
+
+local function getRoot(char)
+    return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso"))
+end
+
+function sFLY(vfly)
+    local plr  = Players.LocalPlayer
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        repeat task.wait() until char:FindFirstChildOfClass("Humanoid")
+        humanoid = char:FindFirstChildOfClass("Humanoid")
+    end
+    if flyKeyDown or flyKeyUp then
+        flyKeyDown:Disconnect()
+        flyKeyUp:Disconnect()
+    end
+    local T = getRoot(char)
+    if not T then return end
+    local CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+    local lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+    local SPEED = 0
+    local function FLY()
+        FLYING = true
+        local BG = Instance.new("BodyGyro")
+        local BV = Instance.new("BodyVelocity")
+        BG.P = 9e4
+        BG.Parent = T
+        BV.Parent = T
+        BG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        BG.CFrame = T.CFrame
+        BV.Velocity = Vector3.new(0, 0, 0)
+        BV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        task.spawn(function()
+            repeat task.wait()
+                local camera = workspace.CurrentCamera
+                if not vfly and humanoid then
+                    humanoid.PlatformStand = true
+                end
+                if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then
+                    SPEED = 50
+                elseif SPEED ~= 0 then
+                    SPEED = 0
+                end
+                if (CONTROL.L + CONTROL.R) ~= 0 or (CONTROL.F + CONTROL.B) ~= 0 or (CONTROL.Q + CONTROL.E) ~= 0 then
+                    BV.Velocity = ((camera.CFrame.LookVector * (CONTROL.F + CONTROL.B)) + ((camera.CFrame * CFrame.new(CONTROL.L + CONTROL.R, (CONTROL.F + CONTROL.B + CONTROL.Q + CONTROL.E) * 0.2, 0).p) - camera.CFrame.p)) * SPEED
+                    lCONTROL = {F = CONTROL.F, B = CONTROL.B, L = CONTROL.L, R = CONTROL.R}
+                elseif (CONTROL.L + CONTROL.R) == 0 and (CONTROL.F + CONTROL.B) == 0 and (CONTROL.Q + CONTROL.E) == 0 and SPEED ~= 0 then
+                    BV.Velocity = ((camera.CFrame.LookVector * (lCONTROL.F + lCONTROL.B)) + ((camera.CFrame * CFrame.new(lCONTROL.L + lCONTROL.R, (lCONTROL.F + lCONTROL.B + CONTROL.Q + CONTROL.E) * 0.2, 0).p) - camera.CFrame.p)) * SPEED
+                else
+                    BV.Velocity = Vector3.new(0, 0, 0)
+                end
+                BG.CFrame = camera.CFrame
+            until not FLYING
+            CONTROL  = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+            lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+            SPEED = 0
+            BG:Destroy()
+            BV:Destroy()
+            if humanoid then humanoid.PlatformStand = false end
+        end)
+    end
+    flyKeyDown = UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        if input.KeyCode == Enum.KeyCode.W then CONTROL.F = (vfly and vehicleflyspeed or iyflyspeed)
+        elseif input.KeyCode == Enum.KeyCode.S then CONTROL.B = -(vfly and vehicleflyspeed or iyflyspeed)
+        elseif input.KeyCode == Enum.KeyCode.A then CONTROL.L = -(vfly and vehicleflyspeed or iyflyspeed)
+        elseif input.KeyCode == Enum.KeyCode.D then CONTROL.R = (vfly and vehicleflyspeed or iyflyspeed)
+        elseif input.KeyCode == Enum.KeyCode.E and QEfly then CONTROL.Q = (vfly and vehicleflyspeed or iyflyspeed) * 2
+        elseif input.KeyCode == Enum.KeyCode.Q and QEfly then CONTROL.E = -(vfly and vehicleflyspeed or iyflyspeed) * 2
+        end
+        pcall(function() workspace.CurrentCamera.CameraType = Enum.CameraType.Track end)
+    end)
+    flyKeyUp = UserInputService.InputEnded:Connect(function(input, processed)
+        if processed then return end
+        if input.KeyCode == Enum.KeyCode.W then CONTROL.F = 0
+        elseif input.KeyCode == Enum.KeyCode.S then CONTROL.B = 0
+        elseif input.KeyCode == Enum.KeyCode.A then CONTROL.L = 0
+        elseif input.KeyCode == Enum.KeyCode.D then CONTROL.R = 0
+        elseif input.KeyCode == Enum.KeyCode.E then CONTROL.Q = 0
+        elseif input.KeyCode == Enum.KeyCode.Q then CONTROL.E = 0
+        end
+    end)
+    FLY()
+end
+
+function NOFLY()
+    FLYING = false
+    if flyKeyDown or flyKeyUp then
+        flyKeyDown:Disconnect()
+        flyKeyUp:Disconnect()
+    end
+    pcall(function()
+        if Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid").PlatformStand = false
+        end
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+    end)
+end
+
+local velocityHandlerName = "IYMobileVel_" .. math.random(1000, 9999)
+local gyroHandlerName     = "IYMobileGyro_" .. math.random(1000, 9999)
+local mfly1, mfly2
+
+local function unmobilefly(speaker)
+    pcall(function()
+        FLYING = false
+        local root = getRoot(speaker.Character)
+        if root then
+            local vel = root:FindFirstChild(velocityHandlerName)
+            if vel then vel:Destroy() end
+            local gyro = root:FindFirstChild(gyroHandlerName)
+            if gyro then gyro:Destroy() end
+        end
+        if speaker.Character then
+            local hum = speaker.Character:FindFirstChildWhichIsA("Humanoid")
+            if hum then hum.PlatformStand = false end
+        end
+        if mfly1 then mfly1:Disconnect()
+            mfly1 = nil end
+        if mfly2 then mfly2:Disconnect()
+            mfly2 = nil end
+    end)
+end
+
+local function mobilefly(speaker, vfly)
+    unmobilefly(speaker)
+    FLYING = true
+    local root = getRoot(speaker.Character)
+    if not root then return end
+    local camera = workspace.CurrentCamera
+    local v3zero = Vector3.new(0, 0, 0)
+    local v3inf  = Vector3.new(9e9, 9e9, 9e9)
+    local controlModule = speaker.PlayerScripts:FindFirstChild("PlayerModule")
+    if controlModule then
+        controlModule = controlModule:FindFirstChild("ControlModule")
+        if controlModule then
+            controlModule = require(controlModule)
+        end
+    end
+    if not controlModule then return end
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = velocityHandlerName
+    bv.Parent = root
+    bv.MaxForce = v3zero
+    bv.Velocity = v3zero
+    local bg = Instance.new("BodyGyro")
+    bg.Name = gyroHandlerName
+    bg.Parent = root
+    bg.MaxTorque = v3inf
+    bg.P = 1000
+    bg.D = 50
+    mfly2 = RunService.RenderStepped:Connect(function()
+        root = getRoot(speaker.Character)
+        camera = workspace.CurrentCamera
+        if speaker.Character and root and root:FindFirstChild(velocityHandlerName) and root:FindFirstChild(gyroHandlerName) then
+            local humanoid = speaker.Character:FindFirstChildWhichIsA("Humanoid")
+            local VH = root:FindFirstChild(velocityHandlerName)
+            local GH = root:FindFirstChild(gyroHandlerName)
+            VH.MaxForce = v3inf
+            GH.MaxTorque = v3inf
+            if not vfly and humanoid then humanoid.PlatformStand = true end
+            GH.CFrame = camera.CoordinateFrame
+            VH.Velocity = Vector3.new()
+            local direction = controlModule:GetMoveVector()
+            if direction.X ~= 0 then VH.Velocity = VH.Velocity + camera.CFrame.RightVector * (direction.X * ((vfly and vehicleflyspeed or iyflyspeed) * 50)) end
+            if direction.Z ~= 0 then VH.Velocity = VH.Velocity - camera.CFrame.LookVector * (direction.Z * ((vfly and vehicleflyspeed or iyflyspeed) * 50)) end
+        end
+    end)
+end
+
+PlayerTab:CreateToggle({
+    name     = "Fly",
+    value    = false,
+    callback = function(state)
+        if state then
+            if not IsOnMobile then
+                NOFLY()
+                task.wait()
+                sFLY()
+                Window:Notify({ title = "Fly", content = "Fly enabled" })
+            else
+                mobilefly(LocalPlayer)
+                Window:Notify({ title = "Fly", content = "Fly enabled (Mobile)" })
+            end
+        else
+            if not IsOnMobile then
+                NOFLY()
+                Window:Notify({ title = "Fly", content = "Fly disabled" })
+            else
+                unmobilefly(LocalPlayer)
+                Window:Notify({ title = "Fly", content = "Fly disabled (Mobile)" })
+            end
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    name      = "Fly speed slider",
+    range     = { 1, 50 },
+    increment = 1,
+    value     = 1,
+    callback  = function(v)
+        iyflyspeed = v
+        flySpeed = v
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name     = "Vehicle Fly toggle (PC Only)",
+    value    = false,
+    callback = function(state)
+        if state then
+            local seat = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") and LocalPlayer.Character:FindFirstChildOfClass("Humanoid").SeatPart
+            if not seat then
+                Window:Notify({ title = "Movement", content = "Not in a vehicle" })
+                return
+            end
+            local vehicle = seat.Parent
+            while vehicle and vehicle.ClassName ~= "Model" do
+                vehicle = vehicle.Parent
+            end
+            if not vehicle then return end
+            local vRoot = vehicle:FindFirstChildWhichIsA("BasePart")
+            if not vRoot then return end
+            flyGyro = Instance.new("BodyGyro")
+            flyGyro.P = 9e4
+            flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            flyGyro.CFrame = vRoot.CFrame
+            flyGyro.Parent = vRoot
+            flyVel = Instance.new("BodyVelocity")
+            flyVel.Velocity = Vector3.zero
+            flyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            flyVel.Parent = vRoot
+            flyConn = RunService.RenderStepped:Connect(function()
+                local cam = Workspace.CurrentCamera
+                local dir = Vector3.zero
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0) end
+                if dir.Magnitude > 0 then dir = dir.Unit * flySpeed end
+                flyVel.Velocity = dir
+                flyGyro.CFrame = cam.CFrame
+            end)
+        else
+            if flyConn then flyConn:Disconnect() flyConn = nil end
+            if flyGyro then flyGyro:Destroy() flyGyro = nil end
+            if flyVel then flyVel:Destroy() flyVel = nil end
+        end
+    end,
+})
+
+PlayerTab:CreateSection({ name = "Other player features" })
+
+local noclipConn
+PlayerTab:CreateToggle({
+    name     = "Noclip",
+    value    = false,
+    callback = function(state)
+        if state then
+            noclipConn = RunService.Stepped:Connect(function()
+                local char = LocalPlayer.Character
+                if char then
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        else
+            if noclipConn then
+                noclipConn:Disconnect()
+                noclipConn = nil
+            end
+        end
+    end,
+})
+
+local infJumpConn
+PlayerTab:CreateToggle({
+    name     = "Infinite jump",
+    value    = false,
+    callback = function(state)
+        if state then
+            infJumpConn = UserInputService.JumpRequest:Connect(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChildOfClass("Humanoid") then
+                    char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end)
+        else
+            if infJumpConn then
+                infJumpConn:Disconnect()
+                infJumpConn = nil
+            end
+        end
+    end,
+})
+
+PlayerTab:CreateButton({
+    name     = "Reset character",
+    callback = function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char.Humanoid.Health = 0
+        end
+    end,
+})
+
+PlayerTab:CreateToggle({
+    name     = "Freeze character",
+    value    = false,
+    callback = function(state)
+        freezeEnabled = state
+        applyCharacterAttributes(LocalPlayer.Character)
+    end,
+})
+
+PlayerTab:CreateButton({
+    name     = "Sit",
+    callback = function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char.Humanoid.Sit = true
+        end
+    end,
+})
+
+PlayerTab:CreateButton({
+    name     = "Jump",
+    callback = function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end,
+})
+
+local spinBotEnabled = false
+local spinSpeed = 20
+local spinConn
+PlayerTab:CreateToggle({
+    name     = "Activate spin bot",
+    value    = false,
+    callback = function(state)
+        spinBotEnabled = state
+        if spinBotEnabled then
+            spinConn = RunService.RenderStepped:Connect(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+                end
+            end)
+        else
+            if spinConn then
+                spinConn:Disconnect()
+                spinConn = nil
+            end
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    name      = "Spin bot speed slider",
+    range     = { 1, 100 },
+    increment = 1,
+    value     = 20,
+    callback  = function(val)
+        spinSpeed = val
+    end,
+})
+
+PlayerTab:CreateButton({
+    name     = "Remove character limbs",
+    callback = function()
+        local char = LocalPlayer.Character
+        if char then
+            for _, partName in ipairs({
+                "Left Arm", "Right Arm", "Left Leg", "Right Leg",
+                "LeftHand", "RightHand", "LeftLowerArm", "RightLowerArm",
+                "LeftUpperArm", "RightUpperArm", "LeftFoot", "RightFoot",
+                "LeftLowerLeg", "RightLowerLeg", "LeftUpperLeg", "RightUpperLeg"
+            }) do
+                local limb = char:FindFirstChild(partName)
+                if limb then limb:Destroy() end
+            end
+        end
+    end,
+})
+
+PlayerTab:CreateButton({
+    name     = "Remove character head",
+    callback = function()
+        local char = LocalPlayer.Character
+        if char then
+            local head = char:FindFirstChild("Head")
+            if head then head:Destroy() end
+        end
+    end,
+})
+
+PlayerTab:CreateButton({
+    name     = "Remove character torso",
+    callback = function()
+        local char = LocalPlayer.Character
+        if char then
+            for _, torsoName in ipairs({"Torso", "UpperTorso", "LowerTorso"}) do
+                local torso = char:FindFirstChild(torsoName)
+                if torso then torso:Destroy() end
+            end
+        end
+    end,
+})
+
+local antiflingConn
+PlayerTab:CreateToggle({
+    name     = "Antifling",
+    value    = false,
+    callback = function(state)
+        if state then
+            antiflingConn = RunService.Stepped:Connect(function()
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        for _, v in ipairs(plr.Character:GetDescendants()) do
+                            if v:IsA("BasePart") then
+                                v.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if antiflingConn then
+                antiflingConn:Disconnect()
+                antiflingConn = nil
+            end
+        end
+    end,
+})
+
+local antivoidConn
+local lastSafeCFrame = nil
+local voidFallStart = nil
+PlayerTab:CreateToggle({
+    name     = "Antivoid",
+    value    = false,
+    callback = function(state)
+        if state then
+            antivoidConn = RunService.Heartbeat:Connect(function()
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if not hrp or not hum then return end
+
+                local grounded = hum.FloorMaterial ~= Enum.Material.Air
+                if grounded then
+                    lastSafeCFrame = hrp.CFrame
+                    voidFallStart = nil
+                else
+                    if not voidFallStart then
+                        voidFallStart = tick()
+                    end
+                    local fallingTooLong = (tick() - (voidFallStart or tick())) > 2.5
+                    local tooLow = hrp.Position.Y < (Workspace.FallenPartsDestroyHeight + 50)
+                    if (fallingTooLong or tooLow) and lastSafeCFrame then
+                        hrp.CFrame = lastSafeCFrame
+                        hrp.AssemblyLinearVelocity = Vector3.zero
+                        hrp.AssemblyAngularVelocity = Vector3.zero
+                        voidFallStart = nil
+                    end
+                end
+            end)
+        else
+            if antivoidConn then
+                antivoidConn:Disconnect()
+                antivoidConn = nil
+            end
+            lastSafeCFrame = nil
+            voidFallStart = nil
+        end
+    end,
+})
+
+VisualsTab:CreateSection({ name = "ESP" })
+
+local espEnabled = false
+local chamsEnabled = false
+local linesEnabled = false
+local boxesEnabled = false
+local distanceEnabled = false
+local namesEnabled = false
+local healthEnabled = false
+
+local EspFolder = Instance.new("Folder")
+EspFolder.Name = "SkyESP"
+EspFolder.Parent = CoreGui
+
+local DrawingObjects = {}
+
+local function clearPlayerESP(player)
+    local data = DrawingObjects[player]
+    if not data then return end
+    if data.highlight then data.highlight:Destroy() end
+    if data.billboard then data.billboard:Destroy() end
+    if data.box then data.box:Destroy() end
+    if data.line then data.line:Destroy() end
+    if data.boxGui then data.boxGui:Destroy() end
+    if data.lineGui then data.lineGui:Destroy() end
+    DrawingObjects[player] = nil
+end
+
+local function clearAllESP()
+    for player, _ in pairs(DrawingObjects) do
+        clearPlayerESP(player)
+    end
+    for _, child in ipairs(EspFolder:GetChildren()) do
+        child:Destroy()
+    end
+end
+
+local function createESPForPlayer(player)
+    if player == LocalPlayer then return end
+    if DrawingObjects[player] then return end
+
+    local data = {}
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "SkyHighlight"
+    highlight.FillColor = Color3.fromRGB(0, 170, 255)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Enabled = false
+    highlight.Parent = EspFolder
+    data.highlight = highlight
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "SkyESPBillboard"
+    billboard.Size = UDim2.new(0, 200, 0, 80)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Enabled = false
+    billboard.Parent = EspFolder
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "Name"
+    nameLabel.Size = UDim2.new(1, 0, 0, 20)
+    nameLabel.Position = UDim2.new(0, 0, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextStrokeTransparency = 0.5
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 14
+    nameLabel.Text = player.DisplayName
+    nameLabel.Parent = billboard
+
+    local distLabel = Instance.new("TextLabel")
+    distLabel.Name = "Distance"
+    distLabel.Size = UDim2.new(1, 0, 0, 18)
+    distLabel.Position = UDim2.new(0, 0, 0, 20)
+    distLabel.BackgroundTransparency = 1
+    distLabel.TextColor3 = Color3.fromRGB(180, 220, 255)
+    distLabel.TextStrokeTransparency = 0.5
+    distLabel.Font = Enum.Font.Gotham
+    distLabel.TextSize = 12
+    distLabel.Text = ""
+    distLabel.Parent = billboard
+
+    local healthLabel = Instance.new("TextLabel")
+    healthLabel.Name = "Health"
+    healthLabel.Size = UDim2.new(1, 0, 0, 18)
+    healthLabel.Position = UDim2.new(0, 0, 0, 38)
+    healthLabel.BackgroundTransparency = 1
+    healthLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    healthLabel.TextStrokeTransparency = 0.5
+    healthLabel.Font = Enum.Font.Gotham
+    healthLabel.TextSize = 12
+    healthLabel.Text = ""
+    healthLabel.Parent = billboard
+
+    data.billboard = billboard
+    data.nameLabel = nameLabel
+    data.distLabel = distLabel
+    data.healthLabel = healthLabel
+
+    local boxGui = Instance.new("ScreenGui")
+    boxGui.Name = "SkyBoxESP"
+    boxGui.IgnoreGuiInset = true
+    boxGui.ResetOnSpawn = false
+    boxGui.Parent = EspFolder
+
+    local boxFrame = Instance.new("Frame")
+    boxFrame.Name = "Box"
+    boxFrame.BackgroundTransparency = 1
+    boxFrame.BorderSizePixel = 0
+    boxFrame.Visible = false
+    boxFrame.Parent = boxGui
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(0, 200, 255)
+    stroke.Thickness = 1.5
+    stroke.Parent = boxFrame
+
+    data.boxGui = boxGui
+    data.box = boxFrame
+
+    local lineGui = Instance.new("ScreenGui")
+    lineGui.Name = "SkyLineESP"
+    lineGui.IgnoreGuiInset = true
+    lineGui.ResetOnSpawn = false
+    lineGui.Parent = EspFolder
+
+    local line = Instance.new("Frame")
+    line.Name = "Line"
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    line.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+    line.BorderSizePixel = 0
+    line.Visible = false
+    line.Parent = lineGui
+
+    data.lineGui = lineGui
+    data.line = line
+
+    DrawingObjects[player] = data
+end
+
+local function updateESP()
+    if not espEnabled then
+        clearAllESP()
+        return
+    end
+
+    local localChar = LocalPlayer.Character
+    local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+        if not (char and hrp and hum and hum.Health > 0) then
+            clearPlayerESP(player)
+            continue
+        end
+
+        createESPForPlayer(player)
+        local data = DrawingObjects[player]
+        if not data then continue end
+
+        if chamsEnabled then
+            data.highlight.Adornee = char
+            data.highlight.Enabled = true
+        else
+            data.highlight.Enabled = false
+            data.highlight.Adornee = nil
+        end
+
+        local showBillboard = namesEnabled or distanceEnabled or healthEnabled
+        if showBillboard then
+            data.billboard.Adornee = hrp
+            data.billboard.Enabled = true
+            data.nameLabel.Visible = namesEnabled
+            data.nameLabel.Text = player.DisplayName ~= player.Name and (player.DisplayName .. " (@" .. player.Name .. ")") or player.Name
+
+            if distanceEnabled and localHRP then
+                local dist = math.floor((hrp.Position - localHRP.Position).Magnitude)
+                data.distLabel.Text = dist .. " studs"
+                data.distLabel.Visible = true
+            else
+                data.distLabel.Visible = false
+            end
+
+            if healthEnabled then
+                local hp = math.floor(hum.Health)
+                local maxHp = math.floor(hum.MaxHealth)
+                data.healthLabel.Text = hp .. " / " .. maxHp
+                data.healthLabel.TextColor3 = Color3.fromRGB(
+                    math.clamp(255 - (hp / maxHp) * 155, 100, 255),
+                    math.clamp((hp / maxHp) * 255, 80, 255),
+                    80
+                )
+                data.healthLabel.Visible = true
+            else
+                data.healthLabel.Visible = false
+            end
+        else
+            data.billboard.Enabled = false
+        end
+
+        local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+        local head = char:FindFirstChild("Head")
+        local headPos = head and Camera:WorldToViewportPoint(head.Position) or screenPos
+
+        if boxesEnabled and onScreen then
+            local height = math.abs(headPos.Y - screenPos.Y) * 2.2
+            local width = height * 0.6
+            data.box.Size = UDim2.new(0, width, 0, height)
+            data.box.Position = UDim2.new(0, screenPos.X - width / 2, 0, screenPos.Y - height * 0.55)
+            data.box.Visible = true
+        else
+            data.box.Visible = false
+        end
+
+        if linesEnabled and onScreen then
+            local from = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+            local to = Vector2.new(screenPos.X, screenPos.Y)
+            local mid = (from + to) / 2
+            local dist = (to - from).Magnitude
+            local angle = math.atan2(to.Y - from.Y, to.X - from.X)
+
+            data.line.Size = UDim2.new(0, dist, 0, 1.5)
+            data.line.Position = UDim2.new(0, mid.X, 0, mid.Y)
+            data.line.Rotation = math.deg(angle)
+            data.line.Visible = true
+        else
+            data.line.Visible = false
+        end
+    end
+end
+
+Players.PlayerRemoving:Connect(function(player)
+    clearPlayerESP(player)
+end)
+
+RunService.RenderStepped:Connect(updateESP)
+
+VisualsTab:CreateToggle({
+    name     = "Activate enabled ESP features",
+    value    = false,
+    callback = function(state)
+        espEnabled = state
+        if not state then
+            clearAllESP()
+        end
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name = "Chams ESP",
+    callback = function(state)
+        chamsEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name = "Lines ESP",
+    callback = function(state)
+        linesEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name = "Boxes ESP",
+    callback = function(state)
+        boxesEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name = "Distance ESP",
+    callback = function(state)
+        distanceEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name = "Names ESP",
+    callback = function(state)
+        namesEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name = "Health ESP",
+    callback = function(state)
+        healthEnabled = state
+    end,
+})
+
+VisualsTab:CreateSection({ name = "Aim" })
+
+local aimbotEnabled = false
+local aimbotTargetPart = "Head"
+local aimbotSmoothness = 60
+local teamCheckEnabled = false
+local ignoreFriendsEnabled = false
+local wallCheckEnabled = false
+local crosshairEnabled = false
+local crosshairSize = 10
+local fovEnabled = false
+local fovRadius = 100
+
+local crosshairGui = Instance.new("ScreenGui")
+crosshairGui.Name = "SkyEssentialsCrosshair"
+crosshairGui.IgnoreGuiInset = true
+crosshairGui.ResetOnSpawn = false
+crosshairGui.Parent = CoreGui
+
+local crosshairFrame = Instance.new("Frame")
+crosshairFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+crosshairFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+crosshairFrame.Size = UDim2.new(0, 10, 0, 10)
+crosshairFrame.BackgroundTransparency = 1
+crosshairFrame.Visible = false
+crosshairFrame.Parent = crosshairGui
+
+local c1 = Instance.new("Frame")
+c1.Size = UDim2.new(0, 2, 1, 0)
+c1.Position = UDim2.new(0.5, -1, 0, 0)
+c1.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+c1.BorderSizePixel = 0
+c1.Parent = crosshairFrame
+
+local c2 = Instance.new("Frame")
+c2.Size = UDim2.new(1, 0, 0, 2)
+c2.Position = UDim2.new(0, 0, 0.5, -1)
+c2.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+c2.BorderSizePixel = 0
+c2.Parent = crosshairFrame
+
+local fovGui = Instance.new("ScreenGui")
+fovGui.Name = "SkyFOV"
+fovGui.IgnoreGuiInset = true
+fovGui.ResetOnSpawn = false
+fovGui.Parent = CoreGui
+
+local fovCircle = Instance.new("Frame")
+fovCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+fovCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
+fovCircle.BackgroundTransparency = 1
+fovCircle.Visible = false
+fovCircle.Parent = fovGui
+
+local fovStroke = Instance.new("UIStroke")
+fovStroke.Color = Color3.fromRGB(0, 200, 255)
+fovStroke.Thickness = 1.5
+fovStroke.Transparency = 0.3
+fovStroke.Parent = fovCircle
+
+local fovCorner = Instance.new("UICorner")
+fovCorner.CornerRadius = UDim.new(1, 0)
+fovCorner.Parent = fovCircle
+
+local function updateFOVCircle()
+    if fovEnabled then
+        local size = fovRadius * 2
+        fovCircle.Size = UDim2.new(0, size, 0, size)
+        fovCircle.Visible = true
+    else
+        fovCircle.Visible = false
+    end
+end
+
+VisualsTab:CreateToggle({
+    name     = "Activate AimBot",
+    value    = false,
+    callback = function(state)
+        aimbotEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name     = "Team check",
+    value    = false,
+    callback = function(state)
+        teamCheckEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name     = "Ignore friends",
+    value    = false,
+    callback = function(state)
+        ignoreFriendsEnabled = state
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name     = "Wall check",
+    value    = false,
+    callback = function(state)
+        wallCheckEnabled = state
+    end,
+})
+
+VisualsTab:CreateDropdown({
+    name     = "AimBot target dropdown",
+    options  = { "Head", "Torso", "Legs" },
+    value    = "Head",
+    callback = function(value)
+        if value == "Torso" then
+            aimbotTargetPart = "UpperTorso"
+        elseif value == "Legs" then
+            aimbotTargetPart = "LeftLowerLeg"
+        else
+            aimbotTargetPart = "Head"
+        end
+    end,
+})
+
+VisualsTab:CreateSlider({
+    name      = "AimBot smoothness slider",
+    range     = { 0, 100 },
+    increment = 1,
+    value     = 60,
+    callback  = function(val)
+        aimbotSmoothness = val
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name     = "Crosshair",
+    value    = false,
+    callback = function(state)
+        crosshairEnabled = state
+        crosshairFrame.Visible = state
+    end,
+})
+
+VisualsTab:CreateSlider({
+    name      = "Crosshair size slider",
+    range     = { 4, 30 },
+    increment = 1,
+    value     = 10,
+    callback  = function(val)
+        crosshairSize = val
+        crosshairFrame.Size = UDim2.new(0, val, 0, val)
+    end,
+})
+
+VisualsTab:CreateToggle({
+    name     = "Activate FOV",
+    value    = false,
+    callback = function(state)
+        fovEnabled = state
+        updateFOVCircle()
+    end,
+})
+
+VisualsTab:CreateSlider({
+    name      = "FOV slider",
+    range     = { 20, 400 },
+    increment = 5,
+    value     = 100,
+    callback  = function(val)
+        fovRadius = val
+        updateFOVCircle()
+    end,
+})
+
+RunService.RenderStepped:Connect(function()
+    if not aimbotEnabled then return end
+
+    local closestTarget = nil
+    local shortestDist = math.huge
+    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+
+        if teamCheckEnabled then
+            local sameTeam = false
+            if LocalPlayer.Team ~= nil and player.Team ~= nil then
+                sameTeam = (LocalPlayer.Team == player.Team) or (LocalPlayer.Team.Name == player.Team.Name)
+            end
+            if not sameTeam and LocalPlayer.TeamColor and player.TeamColor then
+                sameTeam = (LocalPlayer.TeamColor == player.TeamColor)
+            end
+            if sameTeam then
+                continue
+            end
+        end
+
+        if ignoreFriendsEnabled then
+            local ok, isFriend = pcall(function()
+                return LocalPlayer:IsFriendsWith(player.UserId)
+            end)
+            if ok and isFriend then
+                continue
+            end
+        end
+
+        local char = player.Character
+        if not char then continue end
+
+        local targetPart = char:FindFirstChild(aimbotTargetPart)
+        if not targetPart then
+            if aimbotTargetPart == "UpperTorso" then
+                targetPart = char:FindFirstChild("Torso")
+            elseif aimbotTargetPart == "LeftLowerLeg" then
+                targetPart = char:FindFirstChild("Left Leg")
+            end
+        end
+        if not targetPart then continue end
+
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum or hum.Health <= 0 then continue end
+
+        if wallCheckEnabled then
+            local origin = Camera.CFrame.Position
+            local direction = (targetPart.Position - origin)
+            local rayParams = RaycastParams.new()
+            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+            if LocalPlayer.Character then
+                rayParams.FilterDescendantsInstances = {LocalPlayer.Character}
+            end
+            rayParams.IgnoreWater = true
+            local result = Workspace:Raycast(origin, direction, rayParams)
+            if result and not result.Instance:IsDescendantOf(char) then
+                continue
+            end
+        end
+
+        local screenPoint, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+        if not onScreen then continue end
+
+        local screenVec = Vector2.new(screenPoint.X, screenPoint.Y)
+        local mouseDist = (mousePos - screenVec).Magnitude
+
+        if fovEnabled and mouseDist > fovRadius then
+            continue
+        end
+
+        if mouseDist < shortestDist then
+            shortestDist = mouseDist
+            closestTarget = targetPart
+        end
+    end
+
+    if closestTarget then
+        local goal = CFrame.new(Camera.CFrame.Position, closestTarget.Position)
+        if aimbotSmoothness <= 0 then
+            Camera.CFrame = goal
+        else
+            local alpha = math.clamp(1 - (aimbotSmoothness / 100), 0.01, 1)
+            Camera.CFrame = Camera.CFrame:Lerp(goal, alpha)
+        end
+    end
+end)
+
+OthersTab:CreateSection({ name = "Utilities & Settings" })
+
+OthersTab:CreateToggle({
+    name     = "Enable jump",
+    value    = true,
+    callback = function(state)
+        local touchGui = LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
+        if touchGui and touchGui:FindFirstChild("TouchControlFrame") then
+            local jumpBtn = touchGui.TouchControlFrame:FindFirstChild("JumpButton")
+            if jumpBtn then
+                jumpBtn.Visible = state
+            end
+        end
+    end,
+})
+
+OthersTab:CreateSlider({
+    name      = "Brightness slider",
+    range     = { 0, 100 },
+    increment = 1,
+    value     = 2,
+    callback  = function(val)
+        Lighting.Brightness = (val / 100) * 3
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Reset brightness",
+    callback = function()
+        Lighting.Brightness = 2
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Make day",
+    callback = function()
+        Lighting.ClockTime = 14
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Make night",
+    callback = function()
+        Lighting.ClockTime = 0
+    end,
+})
+
+OthersTab:CreateSlider({
+    name      = "Time control slider",
+    range     = { 0, 24 },
+    increment = 1,
+    value     = 14,
+    callback  = function(val)
+        Lighting.ClockTime = val
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Reset to original time",
+    callback = function()
+        Lighting.ClockTime = 12
+    end,
+})
+
+local blackScreenGui
+OthersTab:CreateToggle({
+    name     = "Activate black screen",
+    value    = false,
+    callback = function(state)
+        if state then
+            if blackScreenGui then blackScreenGui:Destroy() end
+            blackScreenGui = Instance.new("ScreenGui")
+            blackScreenGui.Name = "SkyBlackScreen"
+            blackScreenGui.IgnoreGuiInset = true
+            blackScreenGui.DisplayOrder = 999999
+            blackScreenGui.ResetOnSpawn = false
+            blackScreenGui.Parent = CoreGui
+
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(1, 0, 1, 0)
+            frame.Position = UDim2.new(0, 0, 0, 0)
+            frame.BackgroundColor3 = Color3.new(0, 0, 0)
+            frame.BorderSizePixel = 0
+            frame.ZIndex = 999999
+            frame.Parent = blackScreenGui
+        else
+            if blackScreenGui then
+                blackScreenGui:Destroy()
+                blackScreenGui = nil
+            end
+        end
+    end,
+})
+
+local freezeScreenConn
+OthersTab:CreateToggle({
+    name     = "Lag/Freeze screen",
+    value    = false,
+    callback = function(state)
+        if state then
+            freezeScreenConn = RunService.RenderStepped:Connect(function()
+                local tickStart = tick()
+                repeat until tick() - tickStart > 0.1
+            end)
+        else
+            if freezeScreenConn then
+                freezeScreenConn:Disconnect()
+                freezeScreenConn = nil
+            end
+        end
+    end,
+})
+
+OthersTab:CreateToggle({
+    name     = "No shadows",
+    value    = false,
+    callback = function(state)
+        Lighting.GlobalShadows = not state
+    end,
+})
+
+OthersTab:CreateToggle({
+    name     = "No fog",
+    value    = false,
+    callback = function(state)
+        if state then
+            Lighting.FogEnd = 9e9
+            Lighting.FogStart = 9e9
+            local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+            if atmo then
+                atmo.Density = 0
+            end
+        else
+            Lighting.FogEnd = 100000
+            Lighting.FogStart = 0
+        end
+    end,
+})
+
+OthersTab:CreateToggle({
+    name     = "Anti-Afk",
+    value    = false,
+    callback = function(state)
+        if state then
+            if not getgenv().SkyAntiAfkConn then
+                getgenv().SkyAntiAfkConn = LocalPlayer.Idled:Connect(function()
+                    pcall(function()
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton2(Vector2.new())
+                    end)
+                end)
+            end
+        else
+            if getgenv().SkyAntiAfkConn then
+                getgenv().SkyAntiAfkConn:Disconnect()
+                getgenv().SkyAntiAfkConn = nil
+            end
+        end
+    end,
+})
+
+OthersTab:CreateToggle({
+    name     = "Uncap FPS",
+    value    = false,
+    callback = function(state)
+        if state then
+            pcall(function()
+                if setfpscap then
+                    setfpscap(0)
+                elseif typeof(setfpscap) == "function" then
+                    setfpscap(999)
+                end
+            end)
+            pcall(function()
+                settings().Rendering.FrameRateManager = 0
+            end)
+        else
+            pcall(function()
+                if setfpscap then
+                    setfpscap(60)
+                end
+            end)
+        end
+    end,
+})
+
+OthersTab:CreateInput({
+    name        = "Enter the name of player to spectate input",
+    placeholder = "Type letters of username...",
+    callback    = function(text)
+        spectatingPlayer = nil
+        if text == "" then return end
+        local lower = string.lower(text)
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                if string.sub(string.lower(player.Name), 1, #text) == lower
+                or string.sub(string.lower(player.DisplayName), 1, #text) == lower then
+                    spectatingPlayer = player
+                    break
+                end
+            end
+        end
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Spectate player",
+    callback = function()
+        if spectatingPlayer and spectatingPlayer.Character then
+            local hum = spectatingPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                isSpectating = true
+                Camera.CameraSubject = hum
+                Window:Notify({ title = "Spectating", content = "Now viewing " .. spectatingPlayer.Name })
+            else
+                Window:Notify({ title = "Error", content = "Player has no humanoid." })
+            end
+        else
+            Window:Notify({ title = "Error", content = "No valid player selected/found to spectate." })
+        end
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Unspectate player",
+    callback = function()
+        isSpectating = false
+        if LocalPlayer.Character then
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                Camera.CameraSubject = hum
+            end
+        end
+        Window:Notify({ title = "Unspectated", content = "Returned to your character." })
+    end,
+})
+
+OthersTab:CreateInput({
+    name        = "Enter the name of player to teleport input",
+    placeholder = "Type letters of username...",
+    callback    = function(text)
+        teleportTarget = nil
+        if text == "" then return end
+        local lower = string.lower(text)
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                if string.sub(string.lower(player.Name), 1, #text) == lower
+                or string.sub(string.lower(player.DisplayName), 1, #text) == lower then
+                    teleportTarget = player
+                    break
+                end
+            end
+        end
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Teleport to player",
+    callback = function()
+        if teleportTarget and teleportTarget.Character then
+            local targetRoot = teleportTarget.Character:FindFirstChild("HumanoidRootPart")
+                or teleportTarget.Character:FindFirstChild("Torso")
+                or teleportTarget.Character:FindFirstChild("UpperTorso")
+            local myRoot = LocalPlayer.Character and (
+                LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                or LocalPlayer.Character:FindFirstChild("Torso")
+                or LocalPlayer.Character:FindFirstChild("UpperTorso")
+            )
+            if targetRoot and myRoot then
+                myRoot.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
+                Window:Notify({ title = "Teleported", content = "Teleported to " .. teleportTarget.Name })
+            else
+                Window:Notify({ title = "Error", content = "Could not find root parts." })
+            end
+        else
+            Window:Notify({ title = "Error", content = "No valid player selected/found to teleport to." })
+        end
+    end,
+})
+
+RunService.Heartbeat:Connect(function()
+    if isSpectating and spectatingPlayer then
+        local char = spectatingPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and Camera.CameraSubject ~= hum then
+                Camera.CameraSubject = hum
+            end
+        end
+    end
+end)
+
+OthersTab:CreateButton({
+    name     = "Lowest graphics",
+    callback = function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Medium graphics",
+    callback = function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level10
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Highest graphics",
+    callback = function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level21
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Rejoin",
+    callback = function()
+        pcall(function()
+            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        end)
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Server hop",
+    callback = function()
+        local placeId = game.PlaceId
+        local jobId = game.JobId
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(
+                "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+            ))
+        end)
+        if success and result and result.data then
+            for _, server in ipairs(result.data) do
+                if server.id ~= jobId and server.playing < server.maxPlayers then
+                    pcall(function()
+                        TeleportService:TeleportToPlaceInstance(placeId, server.id, LocalPlayer)
+                    end)
+                    return
+                end
+            end
+            Window:Notify({ title = "Server Hop", content = "No other servers found." })
+        else
+            Window:Notify({ title = "Server Hop", content = "Failed to fetch servers." })
+        end
+    end,
+})
+
+OthersTab:CreateToggle({
+    name     = "Disable 3D rendering",
+    value    = false,
+    callback = function(state)
+        if state then
+            pcall(function()
+                settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+            end)
+            if not blackScreenGui or not blackScreenGui.Parent then
+                local cover = Instance.new("ScreenGui")
+                cover.Name = "SkyDisable3D"
+                cover.IgnoreGuiInset = true
+                cover.DisplayOrder = 999998
+                cover.ResetOnSpawn = false
+                cover.Parent = CoreGui
+
+                local f = Instance.new("Frame")
+                f.Size = UDim2.new(1, 0, 1, 0)
+                f.BackgroundColor3 = Color3.new(0, 0, 0)
+                f.BorderSizePixel = 0
+                f.Parent = cover
+
+                _G.SkyDisable3DGui = cover
+            end
+            pcall(function()
+                RunService:Set3dRenderingEnabled(false)
+            end)
+        else
+            pcall(function()
+                RunService:Set3dRenderingEnabled(true)
+            end)
+            if _G.SkyDisable3DGui then
+                _G.SkyDisable3DGui:Destroy()
+                _G.SkyDisable3DGui = nil
+            end
+        end
+    end,
+})
+
+OthersTab:CreateButton({
+    name     = "Unload UI window",
+    callback = function()
+        clearAllESP()
+        if blackScreenGui then blackScreenGui:Destroy() end
+        if _G.SkyDisable3DGui then _G.SkyDisable3DGui:Destroy() end
+        Window:Unload()
+    end,
+})
+
+ScriptsTab:CreateSection({ name = "FE Scripts" })
+
+ScriptsTab:CreateButton({
+    name = "Fe Death Note",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/MrScripterrFr/Death-Note/main/Death%20Note"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Audio Spam",
+    description = "Only works if game are supported",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/kmXCTkBt"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Goner Divine Edge",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/sFf9MeBE"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "FE Blackhole",
+    description = "Works only if parts are unanchored",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/BacOnHck/Scripts/main/BringFlingPlayers"))("More Scripts: t.me/arceusxscripts")
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Zombie",
+    description = "R6 only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/w7KnPY70/raw", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Tool draw",
+    description = "Need more tools to draw something",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Affexter/Programs/refs/heads/main/scripts/tooldrawFE.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Telekinesis V5",
+    description = "Works for unachored objects",
+    callback = function()
+        loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/randomstring0/Qwerty/refs/heads/main/qwerty11.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe NPC Control",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/randomstring0/Qwerty/refs/heads/main/qwerty13.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Invisible",
+    description = "Works all games",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Honored",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Cortzalno666/NectoVerse-Industries-Data/master/Scripts%20Folder/Honored.lua", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Hug",
+    description = "Works all games",
+    callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Hug-Gui-R6-17818"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Car",
+    description = "With hats or not needed",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/AlexCr4sh/FeScripts/main/FeCarScript.lua", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Fighter",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-FE-Fighter-inspired-by-Gale-21557"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe G-man",
+    description = "R6 Only",
+    callback = function()
+        _G.clientsidedeffect = true
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/randomstringO/Qwerty/refs/heads/main/qwerty18.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Sadboy",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/hgPJbwFO"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Sonic",
+    description = "Works all game",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/uacVtsWe"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Caducus",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/LDL9AyQ4"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe KJ",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/sdAujywd/raw"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Griddy",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/MelonsStuff/hub/main/Griddy.txt"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Glios",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://glot.io/snippets/gua2ntmbdm/raw/main.lua", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Ender",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/9BtJhHrp", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Neko",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Gazer-Ha/Neko-v1/main/Extremely%20Broken"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Punch",
+    description = "Both R6 & R15 supported",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/OBen1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYBOAYgV.lua.txt", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Mimic",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/ZyroOnTop/CopyMimicScript/refs/heads/main/byZyro"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Tool Orbit",
+    description = "Works only in games with gears",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Gazer-Ha/Tool-orbit/refs/heads/main/Source"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Dropkick",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/platinww/CrustyMain/refs/heads/main/universal/DropKick.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Hamster Ball",
+    description = "Both R6 & R15 Supported",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/KaterHub-Inc/scripts/refs/heads/main/unofficial-Projects/FEHamsterBall.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Anti-VC Ban",
+    description = "With VC on",
+    callback = function()
+        loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/c146e7169df99db2afa5052b177dd747.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Gaze Fe Emotes",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Gazer-Ha/Gaze-stuff/refs/heads/main/Gaze%20emote"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "UGC Fe Emotes",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Rootleak/roblox/refs/heads/main/main.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Possessed",
+    description = "R15 I think",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/C2ixw5i9"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Faker",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/qbYEH39m"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Roaring Knight",
+    description = "R15",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/eQ7gsHLD"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Shy Guy",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/SpiderScriptRB/SpiderScriptRBUniversal/refs/heads/main/Protected_Spider.txt"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Laser Arm",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/k21qucTf"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Dinnerbone",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://gist.githubusercontent.com/Angelo-Gitland/51b741d0f65d0e84675018063114142f/raw/986868621f583da9aed80c4005eed365b4b2c0b8/Fe%20Dinnerbone%20credit%20to%20owner"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Shadow the hedgehog",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/OQSkiaHL/raw"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Demogorgon",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/ZKCxn6UZ"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Sandevistan V6",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/mahowaga51-cmd/FE-Scripts/refs/heads/main/FE%20Sandevistan%20V6"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Flash",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/nx0xM8xY"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Rokushiki",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/xzXMPL8u"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Mahoraga",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/FmTqJSUc"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Gear 2",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/pukQLfrA"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Hakari",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/Xk8QEPxR"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Todo",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/3yPVOxjG"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Berserker Guts",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/mahowaga51-cmd/FE-Scripts/refs/heads/main/FE%20Guts"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Ultra Instinct",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/nZgdakkk"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Sukuna",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/TdzD7jcc"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Haki",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/VVSNMLHp"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe RCT",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/vC2aEkwE"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Scp 096 Alpha",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/yXWbdvC6"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Parkour",
+    description = "R6 & R15 supports",
+    callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-FE-Parkour-Script-58166"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe R15 Car",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/UqDEIOpO/raw"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe cOOlkidd Forsaken",
+    description = "R15 I think",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/GjQGz7Wa"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Side-Step",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/5uH5j8pU"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Projection Sorcery",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/P7UkqYjn"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Ragdoll V2",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/shakk-code/fe-ragdoll-script/refs/heads/main/script.lua", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Cat",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/Y1MkBRn3"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Emote Wheel",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Chat Spy",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dan41/Roblox-Scripts/refs/heads/main/CHAT%20SPY%20-%202025/ChatSpy2025.lua", true))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Grab Npc",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/GUI-Offical/FileTest/refs/heads/main/Grab%20R6.txt"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Egor",
+    description = "R15 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/JonhFoer/fe-egor-script/main/Script"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Seraphic Blade",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/59mJGQGe/raw"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe King Crimson",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/LAtp1zsu"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe King Crimson V2",
+    description = "Mobile only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/hmDgkfGV"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe walk on walls",
+    description = "Supports any games",
+    callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Walk-on-Walls-Or-ceilings-1469"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Player Lifter",
+    description = "Supports if game has a collision",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/rouxhaver/scripts-3/main/player%20lifter.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Fe Shapeshifter",
+    description = "R6 Only",
+    callback = function()
+        loadstring(game:HttpGet("https://pastefy.app/2C3cRXXp/raw"))()
+    end,
+})
+
+ScriptsTab:CreateSection({ name = "Script Hubs" })
+
+ScriptsTab:CreateButton({
+    name = "Can Hub",
+    description = "150+ Games Supported Keyless",
+    callback = function()
+        loadstring(game:HttpGet("https://api.canhub.dev/code"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Moondiety Hub",
+    description = "20+ Games Supported Keyless",
+    callback = function()
+        loadstring(game:HttpGet("https://moondiety.com/loader"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "No Lag Hub",
+    description = "7 Games Supported Keyless",
+    callback = function()
+        loadstring(game:HttpGet("https://nolag.wtf/script.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Valor Hub",
+    description = "10+ Games Supported",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/9okVR/VALOR_HUB/refs/heads/main/ValorHub_Loader"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Sable Hub",
+    description = "100+ Games Supported",
+    callback = function()
+        loadstring(game:HttpGet("https://flowauth.net/v1/ui/sable.lua"))()
+    end,
+})
+
+ScriptsTab:CreateButton({
+    name = "Ghost Hub",
+    description = "Universal Script",
+    callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/GhostPlayer352/Test4/main/GhostHub"))()
+    end,
+})
+
+Window:Navigate("Player")
