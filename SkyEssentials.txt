@@ -131,7 +131,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Versiontag = Window:CreateTag({
-    text = "V1.0",
+    text = "V1.1",
     color = Color3.fromRGB(15, 175, 255),
 })
 
@@ -2403,5 +2403,1683 @@ ScriptsTab:CreateButton({
         loadstring(game:HttpGet("https://raw.githubusercontent.com/GhostPlayer352/Test4/main/GhostHub"))()
     end,
 })
+
+-- ===== SKY ESSENTIALS ADDON =====
+-- Paste this whole block directly ABOVE the final line:  Window:Navigate("Player")
+-- Adds features into the existing Player / Visuals / Others tabs.
+-- Uses the services/locals already defined in your script. Touch-friendly: toggles, sliders, buttons only.
+
+local StatsService = game:GetService("Stats")
+
+local function getHum()
+    local c = LocalPlayer.Character
+    return c and c:FindFirstChildOfClass("Humanoid")
+end
+
+local function getHRP()
+    local c = LocalPlayer.Character
+    return c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso"))
+end
+
+local function findPlayerByPrefix(text)
+    if not text or text == "" then return nil end
+    local lower = string.lower(text)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            if string.sub(string.lower(p.Name), 1, #lower) == lower
+            or string.sub(string.lower(p.DisplayName), 1, #lower) == lower then
+                return p
+            end
+        end
+    end
+end
+
+---------------------------------------------------------------------
+-- MOVEMENT
+---------------------------------------------------------------------
+PlayerTab:CreateSection({ name = "Movement" })
+
+-- Auto walk forward (no joystick needed)
+local autoWalkConn
+PlayerTab:CreateToggle({
+    name = "Auto walk forward",
+    value = false,
+    callback = function(state)
+        if state then
+            autoWalkConn = RunService.RenderStepped:Connect(function()
+                local hum = getHum()
+                if hum then
+                    hum:Move(Vector3.new(0, 0, -1), true)
+                end
+            end)
+        else
+            if autoWalkConn then autoWalkConn:Disconnect() autoWalkConn = nil end
+            local hum = getHum()
+            if hum then hum:Move(Vector3.zero, true) end
+        end
+    end,
+})
+
+-- Bunny hop
+local bhopConn
+PlayerTab:CreateToggle({
+    name = "Bunny hop",
+    value = false,
+    callback = function(state)
+        if state then
+            bhopConn = RunService.Heartbeat:Connect(function()
+                local hum = getHum()
+                if hum and hum.MoveDirection.Magnitude > 0 and hum.FloorMaterial ~= Enum.Material.Air then
+                    hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end)
+        else
+            if bhopConn then bhopConn:Disconnect() bhopConn = nil end
+        end
+    end,
+})
+
+-- Tap to teleport (tap/click any spot in the world)
+local tapTpConn
+PlayerTab:CreateToggle({
+    name = "Tap to teleport",
+    value = false,
+    callback = function(state)
+        if state then
+            tapTpConn = UserInputService.TouchTap:Connect(function(touchPositions, processed)
+                if processed then return end
+                local pos = touchPositions[1]
+                if not pos then return end
+                local ray = Camera:ViewportPointToRay(pos.X, pos.Y)
+                local params = RaycastParams.new()
+                params.FilterType = Enum.RaycastFilterType.Exclude
+                params.FilterDescendantsInstances = { LocalPlayer.Character }
+                local result = Workspace:Raycast(ray.Origin, ray.Direction * 2000, params)
+                local hrp = getHRP()
+                if result and hrp then
+                    hrp.CFrame = CFrame.new(result.Position + Vector3.new(0, 3, 0))
+                end
+            end)
+        else
+            if tapTpConn then tapTpConn:Disconnect() tapTpConn = nil end
+        end
+    end,
+})
+
+-- Disable sitting
+PlayerTab:CreateToggle({
+    name = "Disable sitting",
+    value = false,
+    callback = function(state)
+        local hum = getHum()
+        if hum then
+            hum:SetStateEnabled(Enum.HumanoidStateType.Seated, not state)
+            if state then hum.Sit = false end
+        end
+    end,
+})
+
+-- Anti-ragdoll / anti-fall-damage style stabilizer
+local antiRagConn
+PlayerTab:CreateToggle({
+    name = "Anti ragdoll",
+    value = false,
+    callback = function(state)
+        if state then
+            antiRagConn = RunService.Heartbeat:Connect(function()
+                local hum = getHum()
+                if hum then
+                    local s = hum:GetState()
+                    if s == Enum.HumanoidStateType.Ragdoll or s == Enum.HumanoidStateType.FallingDown then
+                        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+                    end
+                    hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                    hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                end
+            end)
+        else
+            if antiRagConn then antiRagConn:Disconnect() antiRagConn = nil end
+            local hum = getHum()
+            if hum then
+                hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+                hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+            end
+        end
+    end,
+})
+
+-- Saved position
+local savedCFrame
+PlayerTab:CreateButton({
+    name = "Save position",
+    callback = function()
+        local hrp = getHRP()
+        if hrp then
+            savedCFrame = hrp.CFrame
+            Window:Notify({ title = "Position", content = "Position saved." })
+        end
+    end,
+})
+
+PlayerTab:CreateButton({
+    name = "Teleport to saved position",
+    callback = function()
+        local hrp = getHRP()
+        if hrp and savedCFrame then
+            hrp.CFrame = savedCFrame
+            hrp.AssemblyLinearVelocity = Vector3.zero
+        else
+            Window:Notify({ title = "Position", content = "No saved position yet." })
+        end
+    end,
+})
+
+-- On-screen sprint button (draggable, hold to sprint)
+local sprintSpeed = 60
+local sprintHeld = false
+local sprintBtnGui
+local sprintConn
+PlayerTab:CreateSlider({
+    name = "Sprint button speed",
+    range = { 20, 250 },
+    increment = 1,
+    value = 60,
+    callback = function(v) sprintSpeed = v end,
+})
+
+PlayerTab:CreateToggle({
+    name = "On-screen sprint button",
+    value = false,
+    callback = function(state)
+        if state then
+            if sprintBtnGui then sprintBtnGui:Destroy() end
+            sprintBtnGui = Instance.new("ScreenGui")
+            sprintBtnGui.Name = "SkySprintButton"
+            sprintBtnGui.ResetOnSpawn = false
+            sprintBtnGui.Parent = CoreGui
+
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.fromOffset(78, 78)
+            btn.Position = UDim2.new(1, -110, 0.55, 0)
+            btn.BackgroundColor3 = Color3.fromRGB(30, 100, 180)
+            btn.BackgroundTransparency = 0.25
+            btn.Text = "SPRINT"
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 14
+            btn.AutoButtonColor = false
+            btn.Active = true
+            btn.Draggable = true
+            btn.Parent = sprintBtnGui
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+            local st = Instance.new("UIStroke", btn)
+            st.Color = Color3.fromRGB(120, 200, 255)
+            st.Thickness = 2
+
+            btn.InputBegan:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+                    sprintHeld = true
+                    btn.BackgroundTransparency = 0
+                end
+            end)
+            btn.InputEnded:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+                    sprintHeld = false
+                    btn.BackgroundTransparency = 0.25
+                    applyCharacterAttributes(LocalPlayer.Character)
+                end
+            end)
+
+            sprintConn = RunService.Heartbeat:Connect(function()
+                if sprintHeld then
+                    local hum = getHum()
+                    if hum then hum.WalkSpeed = sprintSpeed end
+                end
+            end)
+        else
+            sprintHeld = false
+            if sprintConn then sprintConn:Disconnect() sprintConn = nil end
+            if sprintBtnGui then sprintBtnGui:Destroy() sprintBtnGui = nil end
+            applyCharacterAttributes(LocalPlayer.Character)
+        end
+    end,
+})
+
+---------------------------------------------------------------------
+-- PLAYERS
+---------------------------------------------------------------------
+PlayerTab:CreateSection({ name = "Players" })
+
+-- Follow player
+local followTarget
+local followConn
+local followDistance = 4
+
+PlayerTab:CreateInput({
+    name = "Follow player name input",
+    placeholder = "Type letters of username...",
+    callback = function(text)
+        followTarget = findPlayerByPrefix(text)
+    end,
+})
+
+PlayerTab:CreateSlider({
+    name = "Follow distance slider",
+    range = { 2, 30 },
+    increment = 1,
+    value = 4,
+    callback = function(v) followDistance = v end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Follow player",
+    value = false,
+    callback = function(state)
+        if state then
+            if not followTarget then
+                Window:Notify({ title = "Follow", content = "No valid player selected." })
+            end
+            followConn = RunService.Heartbeat:Connect(function()
+                local hrp = getHRP()
+                local tc = followTarget and followTarget.Character
+                local thrp = tc and (tc:FindFirstChild("HumanoidRootPart") or tc:FindFirstChild("Torso"))
+                if hrp and thrp then
+                    hrp.CFrame = thrp.CFrame * CFrame.new(0, 0, followDistance)
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+        else
+            if followConn then followConn:Disconnect() followConn = nil end
+        end
+    end,
+})
+
+-- Orbit player
+local orbitConn
+local orbitAngle = 0
+local orbitRadius = 8
+local orbitSpeed = 3
+PlayerTab:CreateSlider({
+    name = "Orbit radius slider",
+    range = { 3, 40 },
+    increment = 1,
+    value = 8,
+    callback = function(v) orbitRadius = v end,
+})
+PlayerTab:CreateSlider({
+    name = "Orbit speed slider",
+    range = { 1, 20 },
+    increment = 1,
+    value = 3,
+    callback = function(v) orbitSpeed = v end,
+})
+PlayerTab:CreateToggle({
+    name = "Orbit selected player",
+    value = false,
+    callback = function(state)
+        if state then
+            orbitConn = RunService.Heartbeat:Connect(function(dt)
+                local hrp = getHRP()
+                local tc = followTarget and followTarget.Character
+                local thrp = tc and (tc:FindFirstChild("HumanoidRootPart") or tc:FindFirstChild("Torso"))
+                if hrp and thrp then
+                    orbitAngle = orbitAngle + dt * orbitSpeed
+                    local offset = Vector3.new(math.cos(orbitAngle) * orbitRadius, 0, math.sin(orbitAngle) * orbitRadius)
+                    hrp.CFrame = CFrame.lookAt(thrp.Position + offset, thrp.Position)
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+        else
+            if orbitConn then orbitConn:Disconnect() orbitConn = nil end
+        end
+    end,
+})
+
+-- Hitbox expander
+local hitboxEnabled = false
+local hitboxSize = 6
+local hitboxOriginal = {}
+local hitboxConn
+
+local function restoreHitboxes()
+    for part, size in pairs(hitboxOriginal) do
+        if part and part.Parent then
+            part.Size = size
+            part.Transparency = 1
+            part.CanCollide = true
+        end
+    end
+    hitboxOriginal = {}
+end
+
+PlayerTab:CreateSlider({
+    name = "Hitbox size slider",
+    range = { 2, 30 },
+    increment = 1,
+    value = 6,
+    callback = function(v) hitboxSize = v end,
+})
+
+PlayerTab:CreateToggle({
+    name = "Hitbox expander",
+    value = false,
+    callback = function(state)
+        hitboxEnabled = state
+        if state then
+            hitboxConn = RunService.Heartbeat:Connect(function()
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character then
+                        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            if not hitboxOriginal[hrp] then
+                                hitboxOriginal[hrp] = hrp.Size
+                            end
+                            hrp.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                            hrp.Transparency = 0.8
+                            hrp.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        else
+            if hitboxConn then hitboxConn:Disconnect() hitboxConn = nil end
+            restoreHitboxes()
+        end
+    end,
+})
+
+-- Copy player info / list
+PlayerTab:CreateButton({
+    name = "Copy player list",
+    callback = function()
+        local lines = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            table.insert(lines, p.DisplayName .. " (@" .. p.Name .. ") - " .. p.UserId)
+        end
+        local text = table.concat(lines, "\n")
+        local ok = pcall(function() setclipboard(text) end)
+        Window:Notify({
+            title = "Players",
+            content = ok and ("Copied " .. #lines .. " players.") or "Clipboard not supported by executor.",
+        })
+    end,
+})
+
+---------------------------------------------------------------------
+-- CAMERA / VISUALS
+---------------------------------------------------------------------
+VisualsTab:CreateSection({ name = "Camera & Visuals" })
+
+VisualsTab:CreateSlider({
+    name = "Camera FOV slider",
+    range = { 30, 120 },
+    increment = 1,
+    value = 70,
+    callback = function(v)
+        Camera.FieldOfView = v
+    end,
+})
+
+VisualsTab:CreateButton({
+    name = "Unlock max zoom",
+    callback = function()
+        LocalPlayer.CameraMaxZoomDistance = 10000
+        LocalPlayer.CameraMinZoomDistance = 0
+        Window:Notify({ title = "Camera", content = "Zoom limits unlocked." })
+    end,
+})
+
+VisualsTab:CreateSlider({
+    name = "Camera zoom distance slider",
+    range = { 0, 500 },
+    increment = 1,
+    value = 12,
+    callback = function(v)
+        LocalPlayer.CameraMaxZoomDistance = math.max(v, 1)
+        LocalPlayer.CameraMinZoomDistance = v
+    end,
+})
+
+-- Fullbright
+local fbConn
+local fbOriginal
+VisualsTab:CreateToggle({
+    name = "Fullbright",
+    value = false,
+    callback = function(state)
+        if state then
+            fbOriginal = {
+                Brightness = Lighting.Brightness,
+                ClockTime = Lighting.ClockTime,
+                GlobalShadows = Lighting.GlobalShadows,
+                Ambient = Lighting.Ambient,
+                OutdoorAmbient = Lighting.OutdoorAmbient,
+                FogEnd = Lighting.FogEnd,
+            }
+            fbConn = RunService.RenderStepped:Connect(function()
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.GlobalShadows = false
+                Lighting.Ambient = Color3.fromRGB(178, 178, 178)
+                Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
+                Lighting.FogEnd = 9e9
+            end)
+        else
+            if fbConn then fbConn:Disconnect() fbConn = nil end
+            if fbOriginal then
+                for k, v in pairs(fbOriginal) do
+                    pcall(function() Lighting[k] = v end)
+                end
+                fbOriginal = nil
+            end
+        end
+    end,
+})
+
+-- Remove post effects (blur, bloom, color correction, sun rays, DoF)
+VisualsTab:CreateButton({
+    name = "Remove post effects",
+    callback = function()
+        local n = 0
+        for _, v in ipairs(Lighting:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect")
+            or v:IsA("BloomEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("DepthOfFieldEffect") then
+                v:Destroy()
+                n = n + 1
+            end
+        end
+        Window:Notify({ title = "Visuals", content = "Removed " .. n .. " effects." })
+    end,
+})
+
+-- Custom crosshair color-cycling is skipped; instead: tool ESP-free "full ambient" handled above.
+
+-- Camera shake / head bob off + force third person lock
+VisualsTab:CreateToggle({
+    name = "Force third person",
+    value = false,
+    callback = function(state)
+        if state then
+            LocalPlayer.CameraMode = Enum.CameraMode.Classic
+            LocalPlayer.CameraMinZoomDistance = 8
+        else
+            LocalPlayer.CameraMinZoomDistance = 0.5
+        end
+    end,
+})
+
+-- Item ESP for tools lying in the world
+local toolEspEnabled = false
+local toolEspFolder = Instance.new("Folder")
+toolEspFolder.Name = "SkyToolESP"
+toolEspFolder.Parent = CoreGui
+local toolEspConn
+
+local function clearToolEsp()
+    for _, c in ipairs(toolEspFolder:GetChildren()) do c:Destroy() end
+end
+
+VisualsTab:CreateToggle({
+    name = "Dropped tool ESP",
+    value = false,
+    callback = function(state)
+        toolEspEnabled = state
+        if state then
+            local lastScan = 0
+            toolEspConn = RunService.Heartbeat:Connect(function()
+                if tick() - lastScan < 2 then return end
+                lastScan = tick()
+                clearToolEsp()
+                for _, obj in ipairs(Workspace:GetDescendants()) do
+                    if obj:IsA("Tool") and obj.Parent == Workspace then
+                        local handle = obj:FindFirstChild("Handle")
+                        if handle then
+                            local h = Instance.new("Highlight")
+                            h.FillColor = Color3.fromRGB(255, 220, 60)
+                            h.FillTransparency = 0.5
+                            h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                            h.Adornee = obj
+                            h.Parent = toolEspFolder
+                        end
+                    end
+                end
+            end)
+        else
+            if toolEspConn then toolEspConn:Disconnect() toolEspConn = nil end
+            clearToolEsp()
+        end
+    end,
+})
+
+---------------------------------------------------------------------
+-- TOOLS / UTILITY
+---------------------------------------------------------------------
+OthersTab:CreateSection({ name = "Tools & Utility" })
+
+OthersTab:CreateButton({
+    name = "Equip all tools",
+    callback = function()
+        local hum = getHum()
+        if not hum then return end
+        for _, t in ipairs(LocalPlayer.Backpack:GetChildren()) do
+            if t:IsA("Tool") then
+                pcall(function() hum:EquipTool(t) end)
+                t.Parent = LocalPlayer.Character
+            end
+        end
+    end,
+})
+
+OthersTab:CreateButton({
+    name = "Unequip all tools",
+    callback = function()
+        local hum = getHum()
+        if hum then hum:UnequipTools() end
+    end,
+})
+
+OthersTab:CreateButton({
+    name = "Drop all tools",
+    callback = function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        for _, t in ipairs(LocalPlayer.Backpack:GetChildren()) do
+            if t:IsA("Tool") then t.Parent = char end
+        end
+        for _, t in ipairs(char:GetChildren()) do
+            if t:IsA("Tool") then t.Parent = Workspace end
+        end
+    end,
+})
+
+-- Auto rejoin when kicked/disconnected
+local autoRejoinConn
+OthersTab:CreateToggle({
+    name = "Auto rejoin on kick",
+    value = false,
+    callback = function(state)
+        if state then
+            pcall(function()
+                local overlay = CoreGui:WaitForChild("RobloxPromptGui", 5):WaitForChild("promptOverlay", 5)
+                autoRejoinConn = overlay.ChildAdded:Connect(function(child)
+                    if child.Name == "ErrorPrompt" then
+                        task.wait(1)
+                        if #Players:GetPlayers() <= 1 then
+                            LocalPlayer:Kick("\nRejoining...")
+                            task.wait()
+                            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                        else
+                            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+                        end
+                    end
+                end)
+            end)
+        else
+            if autoRejoinConn then autoRejoinConn:Disconnect() autoRejoinConn = nil end
+        end
+    end,
+})
+
+-- FPS boost: strip textures / decals / particles / materials
+OthersTab:CreateButton({
+    name = "FPS boost (strip textures & effects)",
+    callback = function()
+        local n = 0
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+                n = n + 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+                v.Enabled = false
+                n = n + 1
+            elseif v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            end
+        end
+        Lighting.GlobalShadows = false
+        Window:Notify({ title = "FPS Boost", content = "Optimized " .. n .. " objects." })
+    end,
+})
+
+-- Server info
+OthersTab:CreateButton({
+    name = "Copy server job ID",
+    callback = function()
+        local ok = pcall(function() setclipboard(game.JobId) end)
+        Window:Notify({
+            title = "Server",
+            content = ok and "Job ID copied." or ("Job ID: " .. game.JobId),
+        })
+    end,
+})
+
+OthersTab:CreateButton({
+    name = "Join smallest server",
+    callback = function()
+        local ok, result = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(
+                "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+            ))
+        end)
+        if ok and result and result.data then
+            local best
+            for _, s in ipairs(result.data) do
+                if s.id ~= game.JobId and s.playing < s.maxPlayers then
+                    if not best or s.playing < best.playing then best = s end
+                end
+            end
+            if best then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, best.id, LocalPlayer)
+                return
+            end
+        end
+        Window:Notify({ title = "Server", content = "No suitable server found." })
+    end,
+})
+
+-- FPS / ping / player count overlay
+local statsGui, statsConn
+OthersTab:CreateToggle({
+    name = "Stats overlay (FPS / ping / players)",
+    value = false,
+    callback = function(state)
+        if state then
+            if statsGui then statsGui:Destroy() end
+            statsGui = Instance.new("ScreenGui")
+            statsGui.Name = "SkyStats"
+            statsGui.ResetOnSpawn = false
+            statsGui.Parent = CoreGui
+
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.fromOffset(190, 22)
+            lbl.Position = UDim2.new(0, 8, 0, 8)
+            lbl.BackgroundColor3 = Color3.fromRGB(10, 20, 34)
+            lbl.BackgroundTransparency = 0.35
+            lbl.TextColor3 = Color3.fromRGB(180, 225, 255)
+            lbl.Font = Enum.Font.GothamMedium
+            lbl.TextSize = 12
+            lbl.Text = "..."
+            lbl.Parent = statsGui
+            Instance.new("UICorner", lbl).CornerRadius = UDim.new(0, 8)
+
+            local frames, last = 0, tick()
+            statsConn = RunService.RenderStepped:Connect(function()
+                frames = frames + 1
+                if tick() - last >= 1 then
+                    local fps = frames
+                    frames = 0
+                    last = tick()
+                    local ping = 0
+                    pcall(function()
+                        ping = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValue())
+                    end)
+                    lbl.Text = string.format("FPS %d  |  Ping %dms  |  %d players", fps, ping, #Players:GetPlayers())
+                end
+            end)
+        else
+            if statsConn then statsConn:Disconnect() statsConn = nil end
+            if statsGui then statsGui:Destroy() statsGui = nil end
+        end
+    end,
+})
+
+-- Chat/spam-free: auto reset when health low
+local lowHpThreshold = 20
+local autoResetConn
+OthersTab:CreateSlider({
+    name = "Low health reset threshold (%)",
+    range = { 5, 60 },
+    increment = 1,
+    value = 20,
+    callback = function(v) lowHpThreshold = v end,
+})
+OthersTab:CreateToggle({
+    name = "Auto heal-safe teleport (low health)",
+    value = false,
+    callback = function(state)
+        if state then
+            autoResetConn = RunService.Heartbeat:Connect(function()
+                local hum, hrp = getHum(), getHRP()
+                if hum and hrp and hum.MaxHealth > 0 and (hum.Health / hum.MaxHealth) * 100 <= lowHpThreshold and hum.Health > 0 then
+                    hrp.CFrame = hrp.CFrame + Vector3.new(0, 150, 0)
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+        else
+            if autoResetConn then autoResetConn:Disconnect() autoResetConn = nil end
+        end
+    end,
+})
+
+-- Cleanup on respawn for state-based toggles handled by Heartbeat loops (they re-read the character each tick).
+-- ===== END ADDON =====
+
+-- ===== SKY ESSENTIALS V1.1 ADDON =====
+-- Wrapped in its own function scope so it doesn't eat into the main chunk's local limit.
+;(function()
+
+local Terrain = Workspace.Terrain
+local WorldTab = Window:CreateTab({ name = "World", icon = 100033680381365 })
+
+local function hum()
+    local c = LocalPlayer.Character
+    return c and c:FindFirstChildOfClass("Humanoid")
+end
+
+local function root()
+    local c = LocalPlayer.Character
+    return c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso"))
+end
+
+local function screenRay(pos)
+    local ray = Camera:ViewportPointToRay(pos.X, pos.Y)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = { LocalPlayer.Character }
+    return Workspace:Raycast(ray.Origin, ray.Direction * 2000, params)
+end
+
+local function makeCircleButton(name, text, pos, size)
+    local gui = Instance.new("ScreenGui")
+    gui.Name = name
+    gui.ResetOnSpawn = false
+    gui.Parent = CoreGui
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.fromOffset(size or 70, size or 70)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(30, 100, 180)
+    btn.BackgroundTransparency = 0.25
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.AutoButtonColor = false
+    btn.Active = true
+    btn.Draggable = true
+    btn.Parent = gui
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+    local st = Instance.new("UIStroke", btn)
+    st.Color = Color3.fromRGB(120, 200, 255)
+    st.Thickness = 2
+    return gui, btn
+end
+
+---------------------------------------------------------------------
+-- PLAYER TAB
+---------------------------------------------------------------------
+PlayerTab:CreateSection({ name = "Movement+" })
+
+-- CFrame speed (works even when WalkSpeed is locked)
+local cfSpeed = 2
+local cfConn
+PlayerTab:CreateSlider({
+    name = "CFrame speed slider",
+    range = { 1, 20 },
+    increment = 1,
+    value = 2,
+    callback = function(v) cfSpeed = v end,
+})
+PlayerTab:CreateToggle({
+    name = "CFrame speed",
+    value = false,
+    callback = function(state)
+        if state then
+            cfConn = RunService.Heartbeat:Connect(function(dt)
+                local h, r = hum(), root()
+                if h and r and h.MoveDirection.Magnitude > 0 then
+                    r.CFrame = r.CFrame + h.MoveDirection * cfSpeed * dt * 10
+                end
+            end)
+        else
+            if cfConn then cfConn:Disconnect() cfConn = nil end
+        end
+    end,
+})
+
+-- Glide / slow fall
+local glideSpeed = 10
+local glideConn
+PlayerTab:CreateSlider({
+    name = "Glide fall speed slider",
+    range = { 1, 50 },
+    increment = 1,
+    value = 10,
+    callback = function(v) glideSpeed = v end,
+})
+PlayerTab:CreateToggle({
+    name = "Glide (slow fall)",
+    value = false,
+    callback = function(state)
+        if state then
+            glideConn = RunService.Heartbeat:Connect(function()
+                local r = root()
+                if r then
+                    local vel = r.AssemblyLinearVelocity
+                    if vel.Y < -glideSpeed then
+                        r.AssemblyLinearVelocity = Vector3.new(vel.X, -glideSpeed, vel.Z)
+                    end
+                end
+            end)
+        else
+            if glideConn then glideConn:Disconnect() glideConn = nil end
+        end
+    end,
+})
+
+-- Wall climb
+local climbSpeed = 30
+local climbConn
+PlayerTab:CreateSlider({
+    name = "Wall climb speed slider",
+    range = { 5, 100 },
+    increment = 1,
+    value = 30,
+    callback = function(v) climbSpeed = v end,
+})
+PlayerTab:CreateToggle({
+    name = "Wall climb",
+    value = false,
+    callback = function(state)
+        if state then
+            climbConn = RunService.Heartbeat:Connect(function()
+                local h, r = hum(), root()
+                if not (h and r) or h.MoveDirection.Magnitude == 0 then return end
+                local params = RaycastParams.new()
+                params.FilterType = Enum.RaycastFilterType.Exclude
+                params.FilterDescendantsInstances = { LocalPlayer.Character }
+                local hit = Workspace:Raycast(r.Position, h.MoveDirection * 3, params)
+                if hit then
+                    local vel = r.AssemblyLinearVelocity
+                    r.AssemblyLinearVelocity = Vector3.new(vel.X, climbSpeed, vel.Z)
+                end
+            end)
+        else
+            if climbConn then climbConn:Disconnect() climbConn = nil end
+        end
+    end,
+})
+
+-- Air walk (fixed-height invisible platform)
+local airPart, airConn, airY
+PlayerTab:CreateToggle({
+    name = "Air walk",
+    value = false,
+    callback = function(state)
+        if state then
+            local r, h = root(), hum()
+            if not (r and h) then return end
+            airY = r.Position.Y - (h.HipHeight + r.Size.Y / 2) - 0.5
+            airPart = Instance.new("Part")
+            airPart.Name = "SkyAirWalk"
+            airPart.Size = Vector3.new(10, 1, 10)
+            airPart.Anchored = true
+            airPart.CanCollide = true
+            airPart.Transparency = 0.85
+            airPart.Material = Enum.Material.Glass
+            airPart.Color = Color3.fromRGB(120, 200, 255)
+            airPart.Parent = Workspace
+            airConn = RunService.Heartbeat:Connect(function()
+                local rr = root()
+                if rr and airPart then
+                    airPart.CFrame = CFrame.new(rr.Position.X, airY, rr.Position.Z)
+                end
+            end)
+        else
+            if airConn then airConn:Disconnect() airConn = nil end
+            if airPart then airPart:Destroy() airPart = nil end
+        end
+    end,
+})
+PlayerTab:CreateButton({
+    name = "Air walk: raise 5 studs",
+    callback = function()
+        if airY then airY = airY + 5 end
+    end,
+})
+PlayerTab:CreateButton({
+    name = "Air walk: lower 5 studs",
+    callback = function()
+        if airY then airY = airY - 5 end
+    end,
+})
+
+-- Dash button
+local dashPower = 120
+local dashGui
+local lastDash = 0
+PlayerTab:CreateSlider({
+    name = "Dash power slider",
+    range = { 40, 300 },
+    increment = 5,
+    value = 120,
+    callback = function(v) dashPower = v end,
+})
+PlayerTab:CreateToggle({
+    name = "On-screen dash button",
+    value = false,
+    callback = function(state)
+        if state then
+            if dashGui then dashGui:Destroy() end
+            local gui, btn = makeCircleButton("SkyDashButton", "DASH", UDim2.new(1, -110, 0.7, 0), 70)
+            dashGui = gui
+            btn.Activated:Connect(function()
+                if tick() - lastDash < 0.5 then return end
+                lastDash = tick()
+                local r = root()
+                if r then
+                    local look = r.CFrame.LookVector
+                    r.AssemblyLinearVelocity = Vector3.new(look.X * dashPower, r.AssemblyLinearVelocity.Y, look.Z * dashPower)
+                end
+            end)
+        else
+            if dashGui then dashGui:Destroy() dashGui = nil end
+        end
+    end,
+})
+
+PlayerTab:CreateSection({ name = "World interaction" })
+
+-- Tap to delete (client side) with undo
+local deleted = {}
+local tapDelConn
+PlayerTab:CreateToggle({
+    name = "Tap to delete part",
+    value = false,
+    callback = function(state)
+        if state then
+            tapDelConn = UserInputService.TouchTap:Connect(function(positions, processed)
+                if processed then return end
+                local pos = positions[1]
+                if not pos then return end
+                local result = screenRay(pos)
+                if result and result.Instance and result.Instance:IsA("BasePart") then
+                    local part = result.Instance
+                    if part.Parent and part.Parent:FindFirstChildOfClass("Humanoid") then return end
+                    table.insert(deleted, { part = part, t = part.Transparency, c = part.CanCollide })
+                    part.Transparency = 1
+                    part.CanCollide = false
+                end
+            end)
+        else
+            if tapDelConn then tapDelConn:Disconnect() tapDelConn = nil end
+        end
+    end,
+})
+PlayerTab:CreateButton({
+    name = "Undo last deleted part",
+    callback = function()
+        local d = table.remove(deleted)
+        if d and d.part and d.part.Parent then
+            d.part.Transparency = d.t
+            d.part.CanCollide = d.c
+        end
+    end,
+})
+PlayerTab:CreateButton({
+    name = "Restore all deleted parts",
+    callback = function()
+        for _, d in ipairs(deleted) do
+            if d.part and d.part.Parent then
+                d.part.Transparency = d.t
+                d.part.CanCollide = d.c
+            end
+        end
+        deleted = {}
+    end,
+})
+
+-- Platform stand on a tapped player (stand above them)
+PlayerTab:CreateButton({
+    name = "Copy my coordinates",
+    callback = function()
+        local r = root()
+        if r then
+            local p = r.Position
+            local text = string.format("%.1f, %.1f, %.1f", p.X, p.Y, p.Z)
+            local ok = pcall(function() setclipboard(text) end)
+            Window:Notify({ title = "Coordinates", content = ok and ("Copied " .. text) or text })
+        end
+    end,
+})
+
+local coordText = ""
+PlayerTab:CreateInput({
+    name = "Teleport coordinates input (x, y, z)",
+    placeholder = "e.g. 0, 50, 0",
+    callback = function(text) coordText = text end,
+})
+PlayerTab:CreateButton({
+    name = "Teleport to coordinates",
+    callback = function()
+        local nums = {}
+        for n in string.gmatch(coordText or "", "-?%d+%.?%d*") do
+            table.insert(nums, tonumber(n))
+        end
+        local r = root()
+        if r and #nums >= 3 then
+            r.CFrame = CFrame.new(nums[1], nums[2], nums[3])
+            r.AssemblyLinearVelocity = Vector3.zero
+            Window:Notify({ title = "Teleport", content = "Teleported." })
+        else
+            Window:Notify({ title = "Teleport", content = "Enter 3 numbers: x, y, z" })
+        end
+    end,
+})
+
+---------------------------------------------------------------------
+-- VISUALS TAB
+---------------------------------------------------------------------
+VisualsTab:CreateSection({ name = "ESP+" })
+
+local teamCham, rainbowCham = false, false
+local chamFillOverride
+local function resetChamColors()
+    for _, data in pairs(DrawingObjects) do
+        if data.highlight then
+            data.highlight.FillColor = Color3.fromRGB(0, 170, 255)
+            data.highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    local hue = (tick() * 0.3) % 1
+    for plr, data in pairs(DrawingObjects) do
+        local hl = data.highlight
+        if hl then
+            if rainbowCham then
+                hl.FillColor = Color3.fromHSV(hue, 1, 1)
+                hl.OutlineColor = Color3.fromHSV((hue + 0.5) % 1, 1, 1)
+            elseif teamCham and plr.Team then
+                hl.FillColor = plr.TeamColor.Color
+            end
+            if chamFillOverride then
+                hl.FillTransparency = chamFillOverride
+            end
+        end
+    end
+end)
+
+VisualsTab:CreateToggle({
+    name = "Team colored chams",
+    value = false,
+    callback = function(state)
+        teamCham = state
+        if not teamCham and not rainbowCham then resetChamColors() end
+    end,
+})
+VisualsTab:CreateToggle({
+    name = "Rainbow chams",
+    value = false,
+    callback = function(state)
+        rainbowCham = state
+        if not teamCham and not rainbowCham then resetChamColors() end
+    end,
+})
+VisualsTab:CreateSlider({
+    name = "Chams fill transparency slider",
+    range = { 0, 100 },
+    increment = 5,
+    value = 50,
+    callback = function(v) chamFillOverride = v / 100 end,
+})
+
+-- Held item ESP
+local heldFolder = Instance.new("Folder")
+heldFolder.Name = "SkyHeldESP"
+heldFolder.Parent = CoreGui
+local heldGuis = {}
+local heldConn
+local function clearHeld()
+    for _, g in pairs(heldGuis) do
+        if g then g:Destroy() end
+    end
+    heldGuis = {}
+end
+VisualsTab:CreateToggle({
+    name = "Held item ESP",
+    value = false,
+    callback = function(state)
+        if state then
+            local last = 0
+            heldConn = RunService.Heartbeat:Connect(function()
+                if tick() - last < 0.3 then return end
+                last = tick()
+                for plr, g in pairs(heldGuis) do
+                    if not plr.Parent then
+                        if g then g:Destroy() end
+                        heldGuis[plr] = nil
+                    end
+                end
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer then
+                        local char = plr.Character
+                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                        local tool = char and char:FindFirstChildOfClass("Tool")
+                        local g = heldGuis[plr]
+                        if hrp and tool then
+                            if not g then
+                                g = Instance.new("BillboardGui")
+                                g.Size = UDim2.new(0, 160, 0, 18)
+                                g.StudsOffset = Vector3.new(0, -3.6, 0)
+                                g.AlwaysOnTop = true
+                                local l = Instance.new("TextLabel")
+                                l.Name = "L"
+                                l.Size = UDim2.new(1, 0, 1, 0)
+                                l.BackgroundTransparency = 1
+                                l.TextColor3 = Color3.fromRGB(255, 220, 90)
+                                l.TextStrokeTransparency = 0.5
+                                l.Font = Enum.Font.GothamMedium
+                                l.TextSize = 12
+                                l.Parent = g
+                                g.Parent = heldFolder
+                                heldGuis[plr] = g
+                            end
+                            g.Adornee = hrp
+                            g.L.Text = "[" .. tool.Name .. "]"
+                        elseif g then
+                            g:Destroy()
+                            heldGuis[plr] = nil
+                        end
+                    end
+                end
+            end)
+        else
+            if heldConn then heldConn:Disconnect() heldConn = nil end
+            clearHeld()
+        end
+    end,
+})
+
+-- Self chams
+local selfHl
+VisualsTab:CreateToggle({
+    name = "Self chams",
+    value = false,
+    callback = function(state)
+        if state then
+            if selfHl then selfHl:Destroy() end
+            selfHl = Instance.new("Highlight")
+            selfHl.FillColor = Color3.fromRGB(255, 255, 255)
+            selfHl.FillTransparency = 0.7
+            selfHl.OutlineColor = Color3.fromRGB(0, 200, 255)
+            selfHl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            selfHl.Adornee = LocalPlayer.Character
+            selfHl.Parent = CoreGui
+        else
+            if selfHl then selfHl:Destroy() selfHl = nil end
+        end
+    end,
+})
+LocalPlayer.CharacterAdded:Connect(function(char)
+    if selfHl then selfHl.Adornee = char end
+end)
+
+VisualsTab:CreateSection({ name = "Display" })
+
+-- X-ray
+local xrayParts = {}
+local xrayOn = false
+VisualsTab:CreateToggle({
+    name = "X-ray (see through walls)",
+    value = false,
+    callback = function(state)
+        xrayOn = state
+        if state then
+            task.spawn(function()
+                local n = 0
+                for _, v in ipairs(Workspace:GetDescendants()) do
+                    if not xrayOn then break end
+                    if v:IsA("BasePart") and not v:IsDescendantOf(Terrain) then
+                        local m = v.Parent
+                        if not (m and m:FindFirstChildOfClass("Humanoid")) then
+                            v.LocalTransparencyModifier = 0.7
+                            table.insert(xrayParts, v)
+                        end
+                    end
+                    n = n + 1
+                    if n % 500 == 0 then task.wait() end
+                end
+            end)
+        else
+            for _, v in ipairs(xrayParts) do
+                if v and v.Parent then v.LocalTransparencyModifier = 0 end
+            end
+            xrayParts = {}
+        end
+    end,
+})
+
+-- Hide game UI
+local hiddenGuis = {}
+VisualsTab:CreateToggle({
+    name = "Hide game UI",
+    value = false,
+    callback = function(state)
+        if state then
+            for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
+                if g:IsA("ScreenGui") and g.Enabled then
+                    table.insert(hiddenGuis, g)
+                    g.Enabled = false
+                end
+            end
+        else
+            for _, g in ipairs(hiddenGuis) do
+                if g and g.Parent then g.Enabled = true end
+            end
+            hiddenGuis = {}
+        end
+    end,
+})
+
+-- Camera zoom-in button style: hold FOV zoom
+local zoomedFov = 25
+local normalFov
+VisualsTab:CreateSlider({
+    name = "Zoom FOV slider",
+    range = { 5, 60 },
+    increment = 1,
+    value = 25,
+    callback = function(v) zoomedFov = v end,
+})
+VisualsTab:CreateToggle({
+    name = "Zoom mode",
+    value = false,
+    callback = function(state)
+        if state then
+            normalFov = Camera.FieldOfView
+            Camera.FieldOfView = zoomedFov
+        else
+            Camera.FieldOfView = normalFov or 70
+        end
+    end,
+})
+
+---------------------------------------------------------------------
+-- OTHERS TAB
+---------------------------------------------------------------------
+OthersTab:CreateSection({ name = "Utilities+" })
+
+-- Join/leave notifier
+local joinConns = {}
+OthersTab:CreateToggle({
+    name = "Join / leave notifier",
+    value = false,
+    callback = function(state)
+        if state then
+            table.insert(joinConns, Players.PlayerAdded:Connect(function(p)
+                Window:Notify({ title = "Player joined", content = p.DisplayName .. " (@" .. p.Name .. ")" })
+            end))
+            table.insert(joinConns, Players.PlayerRemoving:Connect(function(p)
+                Window:Notify({ title = "Player left", content = p.DisplayName .. " (@" .. p.Name .. ")" })
+            end))
+        else
+            for _, c in ipairs(joinConns) do c:Disconnect() end
+            joinConns = {}
+        end
+    end,
+})
+
+-- Mute game sounds
+local mutedSounds = {}
+local muteConn
+OthersTab:CreateToggle({
+    name = "Mute game sounds",
+    value = false,
+    callback = function(state)
+        if state then
+            local function mute(s)
+                if s:IsA("Sound") and mutedSounds[s] == nil then
+                    mutedSounds[s] = s.Volume
+                    s.Volume = 0
+                end
+            end
+            for _, s in ipairs(Workspace:GetDescendants()) do mute(s) end
+            for _, s in ipairs(game:GetService("SoundService"):GetDescendants()) do mute(s) end
+            muteConn = Workspace.DescendantAdded:Connect(mute)
+        else
+            if muteConn then muteConn:Disconnect() muteConn = nil end
+            for s, vol in pairs(mutedSounds) do
+                if s and s.Parent then s.Volume = vol end
+            end
+            mutedSounds = {}
+        end
+    end,
+})
+
+OthersTab:CreateToggle({
+    name = "Hide terrain grass",
+    value = false,
+    callback = function(state)
+        pcall(function() Terrain.Decoration = not state end)
+    end,
+})
+
+OthersTab:CreateButton({
+    name = "Rejoin same server",
+    callback = function()
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+        end)
+    end,
+})
+
+OthersTab:CreateButton({
+    name = "Join fullest server",
+    callback = function()
+        local ok, result = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(
+                "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
+            ))
+        end)
+        if ok and result and result.data then
+            local best
+            for _, s in ipairs(result.data) do
+                if s.id ~= game.JobId and s.playing < s.maxPlayers then
+                    if not best or s.playing > best.playing then best = s end
+                end
+            end
+            if best then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, best.id, LocalPlayer)
+                return
+            end
+        end
+        Window:Notify({ title = "Server", content = "No suitable server found." })
+    end,
+})
+
+OthersTab:CreateButton({
+    name = "Copy place & game ID",
+    callback = function()
+        local text = "PlaceId: " .. game.PlaceId .. " | GameId: " .. game.GameId
+        local ok = pcall(function() setclipboard(text) end)
+        Window:Notify({ title = "Game", content = ok and "Copied IDs." or text })
+    end,
+})
+
+OthersTab:CreateButton({
+    name = "Show server info",
+    callback = function()
+        local mins = math.floor(time() / 60)
+        Window:Notify({
+            title = "Server info",
+            content = string.format("%d players | %d min in session | PlaceId %d", #Players:GetPlayers(), mins, game.PlaceId),
+        })
+    end,
+})
+
+---------------------------------------------------------------------
+-- WORLD TAB (new)
+---------------------------------------------------------------------
+WorldTab:CreateSection({ name = "Time" })
+
+local lockTime = 14
+local lockConn
+WorldTab:CreateSlider({
+    name = "Locked time slider",
+    range = { 0, 24 },
+    increment = 1,
+    value = 14,
+    callback = function(v) lockTime = v end,
+})
+WorldTab:CreateToggle({
+    name = "Lock time of day",
+    value = false,
+    callback = function(state)
+        if state then
+            lockConn = RunService.Heartbeat:Connect(function()
+                Lighting.ClockTime = lockTime
+            end)
+        else
+            if lockConn then lockConn:Disconnect() lockConn = nil end
+        end
+    end,
+})
+
+local cycleSpeed = 10
+local cycleConn
+WorldTab:CreateSlider({
+    name = "Day/night cycle speed slider",
+    range = { 1, 100 },
+    increment = 1,
+    value = 10,
+    callback = function(v) cycleSpeed = v end,
+})
+WorldTab:CreateToggle({
+    name = "Day/night cycle",
+    value = false,
+    callback = function(state)
+        if state then
+            cycleConn = RunService.Heartbeat:Connect(function(dt)
+                Lighting.ClockTime = (Lighting.ClockTime + dt * cycleSpeed * 0.1) % 24
+            end)
+        else
+            if cycleConn then cycleConn:Disconnect() cycleConn = nil end
+        end
+    end,
+})
+
+WorldTab:CreateSection({ name = "Color filter" })
+
+local cc
+local ccSat, ccCon, ccBri = 0, 0, 0
+local ccR, ccG, ccB = 255, 255, 255
+local function applyCC()
+    if not cc then return end
+    cc.Saturation = ccSat / 100
+    cc.Contrast = ccCon / 100
+    cc.Brightness = ccBri / 100
+    cc.TintColor = Color3.fromRGB(ccR, ccG, ccB)
+end
+WorldTab:CreateToggle({
+    name = "Enable color filter",
+    value = false,
+    callback = function(state)
+        if state then
+            if cc then cc:Destroy() end
+            cc = Instance.new("ColorCorrectionEffect")
+            cc.Name = "SkyColorFilter"
+            cc.Parent = Lighting
+            applyCC()
+        else
+            if cc then cc:Destroy() cc = nil end
+        end
+    end,
+})
+WorldTab:CreateSlider({
+    name = "Saturation slider",
+    range = { -100, 100 }, increment = 5, value = 0,
+    callback = function(v) ccSat = v applyCC() end,
+})
+WorldTab:CreateSlider({
+    name = "Contrast slider",
+    range = { -100, 100 }, increment = 5, value = 0,
+    callback = function(v) ccCon = v applyCC() end,
+})
+WorldTab:CreateSlider({
+    name = "Filter brightness slider",
+    range = { -100, 100 }, increment = 5, value = 0,
+    callback = function(v) ccBri = v applyCC() end,
+})
+WorldTab:CreateSlider({
+    name = "Tint red slider",
+    range = { 0, 255 }, increment = 5, value = 255,
+    callback = function(v) ccR = v applyCC() end,
+})
+WorldTab:CreateSlider({
+    name = "Tint green slider",
+    range = { 0, 255 }, increment = 5, value = 255,
+    callback = function(v) ccG = v applyCC() end,
+})
+WorldTab:CreateSlider({
+    name = "Tint blue slider",
+    range = { 0, 255 }, increment = 5, value = 255,
+    callback = function(v) ccB = v applyCC() end,
+})
+
+local bloom
+local bloomIntensity = 100
+WorldTab:CreateToggle({
+    name = "Bloom glow",
+    value = false,
+    callback = function(state)
+        if state then
+            if bloom then bloom:Destroy() end
+            bloom = Instance.new("BloomEffect")
+            bloom.Name = "SkyBloom"
+            bloom.Intensity = bloomIntensity / 100
+            bloom.Size = 24
+            bloom.Threshold = 0.9
+            bloom.Parent = Lighting
+        else
+            if bloom then bloom:Destroy() bloom = nil end
+        end
+    end,
+})
+WorldTab:CreateSlider({
+    name = "Bloom intensity slider",
+    range = { 0, 300 }, increment = 5, value = 100,
+    callback = function(v)
+        bloomIntensity = v
+        if bloom then bloom.Intensity = v / 100 end
+    end,
+})
+
+WorldTab:CreateSection({ name = "Sky & weather" })
+
+local hiddenSkies = {}
+WorldTab:CreateToggle({
+    name = "Hide skybox",
+    value = false,
+    callback = function(state)
+        if state then
+            for _, s in ipairs(Lighting:GetChildren()) do
+                if s:IsA("Sky") then
+                    table.insert(hiddenSkies, s)
+                    s.Parent = nil
+                end
+            end
+        else
+            for _, s in ipairs(hiddenSkies) do s.Parent = Lighting end
+            hiddenSkies = {}
+        end
+    end,
+})
+
+WorldTab:CreateToggle({
+    name = "Hide clouds",
+    value = false,
+    callback = function(state)
+        local clouds = Terrain:FindFirstChildOfClass("Clouds")
+        if clouds then clouds.Enabled = not state end
+    end,
+})
+
+local weatherPart, weatherEmitter, weatherConn
+local function stopWeather()
+    if weatherConn then weatherConn:Disconnect() weatherConn = nil end
+    if weatherPart then weatherPart:Destroy() weatherPart = nil end
+    weatherEmitter = nil
+end
+local function startWeather(mode)
+    stopWeather()
+    weatherPart = Instance.new("Part")
+    weatherPart.Name = "SkyWeather"
+    weatherPart.Size = Vector3.new(90, 1, 90)
+    weatherPart.Anchored = true
+    weatherPart.CanCollide = false
+    weatherPart.CanQuery = false
+    weatherPart.CanTouch = false
+    weatherPart.Transparency = 1
+    weatherPart.Parent = Workspace
+
+    local e = Instance.new("ParticleEmitter")
+    e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    e.EmissionDirection = Enum.NormalId.Bottom
+    e.Shape = Enum.ParticleEmitterShape.Box
+    e.Rate = 300
+    e.LightEmission = 0.3
+    e.Parent = weatherPart
+    if mode == "Snow" then
+        e.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+        e.Size = NumberSequence.new(0.35)
+        e.Lifetime = NumberRange.new(6, 9)
+        e.Speed = NumberRange.new(6, 10)
+        e.Acceleration = Vector3.new(2, 0, 1)
+        e.SpreadAngle = Vector2.new(15, 15)
+    else
+        e.Color = ColorSequence.new(Color3.fromRGB(150, 190, 255))
+        e.Size = NumberSequence.new(0.2)
+        e.Lifetime = NumberRange.new(1.5, 2.2)
+        e.Speed = NumberRange.new(70, 90)
+        e.Rate = 600
+        e.Orientation = Enum.ParticleOrientation.VelocityParallel
+        e.Transparency = NumberSequence.new(0.3)
+        e.SpreadAngle = Vector2.new(2, 2)
+    end
+    weatherEmitter = e
+    weatherConn = RunService.RenderStepped:Connect(function()
+        if weatherPart then
+            weatherPart.CFrame = CFrame.new(Camera.CFrame.Position + Vector3.new(0, 40, 0))
+        end
+    end)
+end
+
+WorldTab:CreateDropdown({
+    name = "Weather dropdown",
+    options = { "None", "Snow", "Rain" },
+    value = "None",
+    callback = function(value)
+        if value == "Snow" or value == "Rain" then
+            startWeather(value)
+        else
+            stopWeather()
+        end
+    end,
+})
+
+WorldTab:CreateSection({ name = "Physics & terrain" })
+
+WorldTab:CreateButton({
+    name = "Gravity: Moon",
+    callback = function() Workspace.Gravity = 32 end,
+})
+WorldTab:CreateButton({
+    name = "Gravity: Mars",
+    callback = function() Workspace.Gravity = 74 end,
+})
+WorldTab:CreateButton({
+    name = "Gravity: Normal",
+    callback = function() Workspace.Gravity = 196.2 end,
+})
+WorldTab:CreateButton({
+    name = "Gravity: Heavy",
+    callback = function() Workspace.Gravity = 400 end,
+})
+
+local origWater = Terrain.WaterTransparency
+WorldTab:CreateSlider({
+    name = "Water transparency slider",
+    range = { 0, 100 },
+    increment = 5,
+    value = math.floor(origWater * 100),
+    callback = function(v)
+        pcall(function() Terrain.WaterTransparency = v / 100 end)
+    end,
+})
+
+WorldTab:CreateSlider({
+    name = "Water wave size slider",
+    range = { 0, 100 },
+    increment = 5,
+    value = math.floor(Terrain.WaterWaveSize * 100),
+    callback = function(v)
+        pcall(function() Terrain.WaterWaveSize = v / 100 end)
+    end,
+})
+
+end)()
+-- ===== END V1.1 ADDON =====
 
 Window:Navigate("Player")
